@@ -1211,8 +1211,13 @@
         + (value?.authLog?.length || 0);
     }
 
+    function hasRealLocalState(value) {
+      const users = value?.users || [];
+      return users.length > 1 || users.some(user => normalize(user.login) !== 'максим');
+    }
+
     function shouldPreferLocalState(localSnapshot, cloudState) {
-      if (!localStateAtStart) return false;
+      if (!localStateAtStart || !hasRealLocalState(localSnapshot)) return false;
       return (localSnapshot?.users?.length || 0) > (cloudState?.users?.length || 0)
         || (localSnapshot?.trips?.length || 0) > (cloudState?.trips?.length || 0)
         || stateScore(localSnapshot) > stateScore(cloudState);
@@ -1248,6 +1253,16 @@
       const client = cloudClient();
       if (!client) return;
       const localSnapshot = loadState();
+      const forceLocalUpload = new URLSearchParams(location.search).has('forceLocalUpload');
+      if (forceLocalUpload && localStateAtStart && hasRealLocalState(localSnapshot)) {
+        state = localSnapshot;
+        migrateState(false);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        cloudReady = true;
+        await saveCloudState();
+        toast('Локальная база загружена в облако');
+        return;
+      }
       const { data, error } = await client
         .from(CLOUD_TABLE)
         .select('data')
@@ -1287,7 +1302,7 @@
       if (currentUser()) showApp(); else showAuth();
     }
 
-    migrateState();
+    migrateState(false);
     function currentUser() { return state.users.find(u => u.id === currentUserId); }
     function userById(id) { return state.users.find(u => u.id === id); }
     function userName(id) { return userById(id)?.profile?.name || userById(id)?.login || 'Не назначен'; }
