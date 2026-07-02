@@ -929,6 +929,20 @@
                 <input id="profilePhone" placeholder="+7 900 000-00-00" />
               </div>
             </div>
+            <div class="grid-2">
+              <div class="field">
+                <label>Текущий пароль</label>
+                <input id="currentPassword" type="password" autocomplete="current-password" placeholder="текущий пароль" />
+              </div>
+              <div class="field">
+                <label>Новый пароль</label>
+                <input id="nextPassword" type="password" autocomplete="new-password" placeholder="новый пароль" />
+              </div>
+            </div>
+            <div class="field">
+              <label>Повторите новый пароль</label>
+              <input id="confirmPassword" type="password" autocomplete="new-password" placeholder="новый пароль ещё раз" />
+            </div>
             <button class="btn btn-primary" type="submit">Сохранить профиль</button>
           </form>
         </div>
@@ -1161,8 +1175,10 @@
       }
       maksim.id = 'u_maksim';
       maksim.login = 'Максим';
-      maksim.passwordSalt = ADMIN_PASSWORD_SALT;
-      maksim.passwordHash = ADMIN_PASSWORD_HASH;
+      if (!maksim.passwordSalt || !maksim.passwordHash) {
+        maksim.passwordSalt = ADMIN_PASSWORD_SALT;
+        maksim.passwordHash = ADMIN_PASSWORD_HASH;
+      }
       maksim.role = 'admin';
       maksim.profile = { name: 'Максим', phone: maksim.profile?.phone || '', avatar: maksim.profile?.avatar || '' };
       state.productHistory = state.productHistory || {};
@@ -1814,6 +1830,9 @@
       avatarBox.innerHTML = u.profile.avatar ? `<img src="${u.profile.avatar}" alt="">` : (u.profile.name || u.login).slice(0,2).toUpperCase();
       document.getElementById('profileName').value = u.profile.name || '';
       document.getElementById('profilePhone').value = u.profile.phone || '';
+      document.getElementById('currentPassword').value = '';
+      document.getElementById('nextPassword').value = '';
+      document.getElementById('confirmPassword').value = '';
     }
 
     function renderAdmin() {
@@ -2071,14 +2090,28 @@
       if (e.target.id === 'tripLogModal' || e.target.closest('[data-close-log-modal]')) closeTripLogModal();
     });
 
-    document.getElementById('profileForm').addEventListener('submit', e => {
+    document.getElementById('profileForm').addEventListener('submit', async e => {
       e.preventDefault();
       const u = currentUser();
+      const currentPassword = document.getElementById('currentPassword').value;
+      const nextPassword = document.getElementById('nextPassword').value;
+      const confirmPassword = document.getElementById('confirmPassword').value;
+      const wantsPasswordChange = currentPassword || nextPassword || confirmPassword;
+
+      if (wantsPasswordChange) {
+        if (!currentPassword || !nextPassword || !confirmPassword) return toast('Заполните все поля смены пароля');
+        if (nextPassword !== confirmPassword) return toast('Новый пароль и повтор не совпадают');
+        const ok = await verifyPassword(u, currentPassword);
+        if (!ok) return toast('Текущий пароль указан неверно');
+        u.passwordSalt = uid();
+        u.passwordHash = await hashPassword(nextPassword, u.passwordSalt);
+      }
+
       u.profile.name = document.getElementById('profileName').value.trim();
       u.profile.phone = document.getElementById('profilePhone').value.trim();
       saveState();
       renderAll();
-      toast('Профиль сохранён');
+      toast(wantsPasswordChange ? 'Профиль и пароль сохранены' : 'Профиль сохранён');
     });
 
     document.getElementById('avatarInput').addEventListener('change', e => {
