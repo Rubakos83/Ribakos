@@ -1211,6 +1211,13 @@
         + (value?.authLog?.length || 0);
     }
 
+    function shouldPreferLocalState(localSnapshot, cloudState) {
+      if (!localStateAtStart) return false;
+      return (localSnapshot?.users?.length || 0) > (cloudState?.users?.length || 0)
+        || (localSnapshot?.trips?.length || 0) > (cloudState?.trips?.length || 0)
+        || stateScore(localSnapshot) > stateScore(cloudState);
+    }
+
     function cloudClient() {
       if (!window.supabase?.createClient) return null;
       return window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -1251,11 +1258,12 @@
 
       if (data?.data) {
         const cloudState = { ...structuredClone(defaultState), ...data.data };
-        state = localStateAtStart && stateScore(localSnapshot) > stateScore(cloudState) ? localSnapshot : cloudState;
+        const shouldUploadLocal = shouldPreferLocalState(localSnapshot, cloudState);
+        state = shouldUploadLocal ? localSnapshot : cloudState;
         migrateState(false);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
         cloudReady = true;
-        if (state === localSnapshot) await saveCloudState();
+        if (shouldUploadLocal) await saveCloudState();
         return;
       }
 
