@@ -1097,7 +1097,7 @@
     const SUPABASE_KEY = 'sb_publishable_O3iedRfMp5lPYUFrUAVA7g_2Z4bkvZy';
     const CLOUD_TABLE = 'rybakos_state';
     const CLOUD_STATE_ID = 'main';
-    const APP_BUILD = 'safe-storage-2026-07-02';
+    const APP_BUILD = 'avatar-sync-2026-07-02';
     const ADMIN_PASSWORD_SALT = 'rybakos-admin-2026-07-02-v1';
     const ADMIN_PASSWORD_HASH = 'ccec77f747f7b07b679055c815850cb86b54e7aed5c56b4f11d11d3587b1075a';
 
@@ -1188,6 +1188,7 @@
     let cloudSaveInFlight = false;
     let lastCloudStateJson = '';
     let cloudRefreshTimer = null;
+    let hasUnsavedLocalChanges = false;
 
     function loadState() {
       try {
@@ -1256,11 +1257,19 @@
       const client = cloudClient();
       if (!client) return;
       cloudSaveInFlight = true;
+      const stateJson = JSON.stringify(state);
+      const statePayload = JSON.parse(stateJson);
       try {
-        await client
+        const { error } = await client
           .from(CLOUD_TABLE)
-          .upsert({ id: CLOUD_STATE_ID, data: state, updated_at: new Date().toISOString() }, { onConflict: 'id' });
-        lastCloudStateJson = JSON.stringify(state);
+          .upsert({ id: CLOUD_STATE_ID, data: statePayload, updated_at: new Date().toISOString() }, { onConflict: 'id' });
+        if (error) throw error;
+        lastCloudStateJson = stateJson;
+        if (JSON.stringify(state) === stateJson) {
+          hasUnsavedLocalChanges = false;
+        } else {
+          scheduleCloudSave();
+        }
       } finally {
         cloudSaveInFlight = false;
       }
@@ -1277,6 +1286,7 @@
 
     function saveState() {
       storageSet(STORAGE_KEY, JSON.stringify(state));
+      hasUnsavedLocalChanges = true;
       scheduleCloudSave();
     }
 
@@ -1284,6 +1294,7 @@
       state = cloudState;
       migrateState(false);
       storageSet(STORAGE_KEY, JSON.stringify(state));
+      hasUnsavedLocalChanges = false;
       if (!state.trips.some(trip => trip.id === selectedTripId)) selectedTripId = state.trips[0]?.id || null;
       if (currentUserId && !currentUser()) {
         currentUserId = '';
@@ -1299,7 +1310,7 @@
     }
 
     async function pullCloudState() {
-      if (!cloudReady || cloudSaveTimer || cloudSaveInFlight) return;
+      if (!cloudReady || cloudSaveTimer || cloudSaveInFlight || hasUnsavedLocalChanges) return;
       const client = cloudClient();
       if (!client) return;
       const { data, error } = await client
@@ -2341,18 +2352,53 @@
       toast(wantsPasswordChange ? 'Профиль и пароль сохранены' : 'Профиль сохранён');
     });
 
-    document.getElementById('avatarInput').addEventListener('change', e => {
+    function fileToDataUrl(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(reader.error || new Error('Cannot read file'));
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function loadImageForAvatar(src) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = () => reject(new Error('Cannot load image'));
+        img.src = src;
+      });
+    }
+
+    async function compressAvatarFile(file) {
+      const src = await fileToDataUrl(file);
+      const img = await loadImageForAvatar(src);
+      const maxSize = 360;
+      const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
+      const width = Math.max(1, Math.round(img.width * scale));
+      const height = Math.max(1, Math.round(img.height * scale));
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+      return canvas.toDataURL('image/jpeg', 0.78);
+    }
+
+    document.getElementById('avatarInput').addEventListener('change', async e => {
       const file = e.target.files?.[0];
       if (!file) return;
-      const reader = new FileReader();
-      reader.onload = () => {
+      try {
         const u = currentUser();
-        u.profile.avatar = reader.result;
+        u.profile.avatar = await compressAvatarFile(file);
         saveState();
         renderAll();
         toast('Фото профиля обновлено');
-      };
-      reader.readAsDataURL(file);
+      } catch (err) {
+        toast('Не удалось обработать фото');
+      } finally {
+        e.target.value = '';
+      }
     });
 
     document.getElementById('userForm').addEventListener('submit', async e => {
