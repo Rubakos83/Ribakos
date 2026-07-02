@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Рыбакос — поездки и общие закупки</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     :root {
       --bg: #eef5f3;
@@ -1092,6 +1093,10 @@
   <script>
     const STORAGE_KEY = 'rybakosTripsStateV5';
     const SESSION_KEY = 'rybakosTripsSessionV5';
+    const SUPABASE_URL = 'https://boppuxmtqdacrxcixpsw.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_O3iedRfMp5lPYUFrUAVA7g_2Z4bkvZy';
+    const CLOUD_TABLE = 'rybakos_state';
+    const CLOUD_STATE_ID = 'main';
     const ADMIN_PASSWORD_SALT = 'rybakos-admin-2026-07-02-v1';
     const ADMIN_PASSWORD_HASH = 'ccec77f747f7b07b679055c815850cb86b54e7aed5c56b4f11d11d3587b1075a';
 
@@ -1150,11 +1155,15 @@
       ]
     };
 
+    const hasLocalState = () => !!localStorage.getItem(STORAGE_KEY);
+    const localStateAtStart = hasLocalState();
     let state = loadState();
     let currentUserId = localStorage.getItem(SESSION_KEY) || '';
     let activeView = 'trips';
     let selectedTripId = state.trips[0]?.id || null;
     let tripDetailMode = 'overview';
+    let cloudReady = false;
+    let cloudSaveTimer = null;
 
     function loadState() {
       try {
@@ -1166,8 +1175,9 @@
         return structuredClone(defaultState);
       }
     }
-    function migrateState() {
+    function migrateState(shouldSave = true) {
       state.users = state.users || [];
+      state.trips = state.trips || [];
       let maksim = state.users.find(u => u.id === 'u_maksim' || normalize(u.login) === 'максим');
       if (!maksim) {
         maksim = { id: 'u_maksim', login: 'Максим', passwordSalt: ADMIN_PASSWORD_SALT, passwordHash: ADMIN_PASSWORD_HASH, role: 'admin', profile: { name: 'Максим', phone: '', avatar: '' } };
@@ -1183,14 +1193,92 @@
       maksim.profile = { name: 'Максим', phone: maksim.profile?.phone || '', avatar: maksim.profile?.avatar || '' };
       state.productHistory = state.productHistory || {};
       (state.trips || []).forEach(trip => {
+        trip.participants = trip.participants || [];
         (trip.foodItems || []).forEach(item => {
           if (!item.createdById) item.createdById = item.addedById || item.assignedUserId || trip.organizerId || 'u_maksim';
         });
+        (trip.moneyPools || []).forEach(item => {
+          if (!item.createdById) item.createdById = item.responsibleId || trip.organizerId || 'u_maksim';
+        });
       });
-      saveState();
+      if (shouldSave) saveState();
     }
 
-    function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+    function stateScore(value) {
+      return (value?.users?.length || 0) * 20
+        + (value?.trips?.length || 0) * 20
+        + (value?.trips || []).reduce((sum, trip) => sum + (trip.participants?.length || 0) + (trip.moneyPools?.length || 0) + (trip.foodItems?.length || 0), 0)
+        + (value?.authLog?.length || 0);
+    }
+
+    function cloudClient() {
+      if (!window.supabase?.createClient) return null;
+      return window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    }
+
+    async function saveCloudState() {
+      const client = cloudClient();
+      if (!client) return;
+      await client
+        .from(CLOUD_TABLE)
+        .upsert({ id: CLOUD_STATE_ID, data: state, updated_at: new Date().toISOString() }, { onConflict: 'id' });
+    }
+
+    function scheduleCloudSave() {
+      if (!cloudReady) return;
+      clearTimeout(cloudSaveTimer);
+      cloudSaveTimer = setTimeout(() => {
+        saveCloudState().catch(() => toast('Не удалось сохранить изменения в облако'));
+      }, 450);
+    }
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      scheduleCloudSave();
+    }
+
+    async function loadCloudState() {
+      const client = cloudClient();
+      if (!client) return;
+      const localSnapshot = loadState();
+      const { data, error } = await client
+        .from(CLOUD_TABLE)
+        .select('data')
+        .eq('id', CLOUD_STATE_ID)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      if (data?.data) {
+        const cloudState = { ...structuredClone(defaultState), ...data.data };
+        state = localStateAtStart && stateScore(localSnapshot) > stateScore(cloudState) ? localSnapshot : cloudState;
+        migrateState(false);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        cloudReady = true;
+        if (state === localSnapshot) await saveCloudState();
+        return;
+      }
+
+      migrateState(false);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      cloudReady = true;
+      if (localStateAtStart) await saveCloudState();
+    }
+
+    async function initApp() {
+      try {
+        await loadCloudState();
+      } catch (e) {
+        toast('Облако временно недоступно, работаем с локальной копией');
+      }
+      if (currentUserId && !currentUser()) {
+        currentUserId = '';
+        localStorage.removeItem(SESSION_KEY);
+      }
+      selectedTripId = state.trips[0]?.id || null;
+      if (currentUser()) showApp(); else showAuth();
+    }
+
     migrateState();
     function currentUser() { return state.users.find(u => u.id === currentUserId); }
     function userById(id) { return state.users.find(u => u.id === id); }
@@ -1257,8 +1345,20 @@
     }
 
     function visibleTrips() {
-      if (isAdmin()) return state.trips;
-      return state.trips.filter(t => (t.participants || []).includes(currentUserId));
+      return state.trips;
+    }
+
+    function isTripParticipant(trip, userId = currentUserId) {
+      return (trip?.participants || []).includes(userId);
+    }
+
+    function joinTrip(trip, userId = currentUserId) {
+      if (!trip || !userId) return false;
+      trip.participants = trip.participants || [];
+      if (trip.participants.includes(userId)) return false;
+      trip.participants.push(userId);
+      addTripLog(trip, `${userName(userId)} участвует в поездке`);
+      return true;
     }
 
     function tripDateRange(trip) {
@@ -1540,6 +1640,7 @@
     function openProductModal() {
       const trip = state.trips.find(t => t.id === selectedTripId);
       if (!trip) return;
+      if (!isTripParticipant(trip)) return toast('Сначала нажмите «Участвовать в поездке»');
       const select = document.getElementById('productAssignedSelect');
       const participants = trip.participants || [];
       select.innerHTML = participants.map(id => `<option value="${id}">${escapeHtml(userName(id))}</option>`).join('');
@@ -1558,6 +1659,7 @@
     function openMoneyModal() {
       const trip = state.trips.find(t => t.id === selectedTripId);
       if (!trip) return;
+      if (!isTripParticipant(trip)) return toast('Сначала нажмите «Участвовать в поездке»');
       const select = document.getElementById('moneyResponsibleSelect');
       const participants = trip.participants || [];
       select.innerHTML = participants.map(id => `<option value="${id}">${escapeHtml(userName(id))}</option>`).join('');
@@ -1584,6 +1686,7 @@
     }
 
     function renderTripInfo(trip, canEdit, participantsOptions, allUsersOptions) {
+      const isParticipant = isTripParticipant(trip);
       return `
         <div class="trip-info-card">
           <div class="grid-3">
@@ -1598,6 +1701,7 @@
               const u = userById(id);
               return `<span class="profile-mini">${avatarHtml(u,'sm')}<span>${escapeHtml(userName(id))}</span></span>`;
             }).join('') || '<span class="muted">участников пока нет</span>'}
+            ${isParticipant ? '<span class="badge green">вы участвуете</span>' : '<button class="btn btn-primary btn-small" type="button" data-join-trip>Участвовать в поездке</button>'}
           </div>
           ${canEdit ? `
             <form class="row" data-add-participant style="margin-top:14px; position:relative; z-index:2;">
@@ -1618,6 +1722,7 @@
       }
       const canEdit = isAdmin() || trip.organizerId === currentUserId;
       const canDeleteTrip = isAdmin();
+      const isParticipant = isTripParticipant(trip);
       const participantsOptions = (trip.participants || []).map(id => `<option value="${id}">${escapeHtml(userName(id))}</option>`).join('');
       const allUsersOptions = state.users.map(u => `<option value="${u.id}">${escapeHtml(u.profile.name || u.login)} — ${escapeHtml(u.login)}</option>`).join('');
       const summary = moneySummary(trip);
@@ -1663,7 +1768,7 @@
               <div class="money-summary-pill"><span>Всего покупок</span><b>${summary.count}</b></div>
               <div class="money-summary-pill"><span>Общий бюджет</span><b>${money(summary.total)}</b></div>
             </div>
-            <button class="btn btn-primary" type="button" data-open-money-modal>+ Добавить покупку</button>
+            ${isParticipant ? '<button class="btn btn-primary" type="button" data-open-money-modal>+ Добавить покупку</button>' : '<button class="btn btn-primary" type="button" data-join-trip>Участвовать в поездке</button>'}
           </div>
           <div id="moneyList">${renderMoneyList(trip)}</div>
         `;
@@ -1679,7 +1784,7 @@
           </div>
           <div class="products-toolbar">
             <div style="flex:1 1 auto; min-width: 220px;">${renderProductIcons(trip) || '<div class="muted small">Значки продуктов появятся здесь после добавления позиций.</div>'}</div>
-            <button class="btn btn-orange" type="button" data-open-product-modal>+ Добавить продукт</button>
+            ${isParticipant ? '<button class="btn btn-orange" type="button" data-open-product-modal>+ Добавить продукт</button>' : '<button class="btn btn-orange" type="button" data-join-trip>Участвовать в поездке</button>'}
           </div>
           <div id="foodList">${renderFoodList(trip)}</div>
         `;
@@ -1986,10 +2091,23 @@
 
       const trip = state.trips.find(t => t.id === selectedTripId);
       if (!trip) return;
+      const joinBtn = e.target.closest('[data-join-trip]');
       const delTrip = e.target.closest('[data-delete-trip]');
       const delMoney = e.target.closest('[data-delete-money]');
       const delFood = e.target.closest('[data-delete-food]');
       const toggleFood = e.target.closest('[data-toggle-food]');
+
+      if (joinBtn) {
+        if (joinTrip(trip)) {
+          saveState();
+          renderAll();
+          renderTripDetail();
+          toast('Вы участвуете в поездке');
+        } else {
+          toast('Вы уже участвуете в этой поездке');
+        }
+        return;
+      }
 
       if (delTrip) {
         if (!isAdmin()) return toast('Удалять поездки может только администратор');
@@ -2003,6 +2121,10 @@
       }
       if (delMoney) {
         const item = (trip.moneyPools || []).find(m => m.id === delMoney.dataset.deleteMoney);
+        if (!item) return;
+        if (!isAdmin() && item.createdById !== currentUserId) {
+          return toast('Удалить покупку может только тот, кто её добавил, или администратор');
+        }
         trip.moneyPools = (trip.moneyPools || []).filter(m => m.id !== delMoney.dataset.deleteMoney);
         addTripLog(trip, `Удалена общая покупка: ${item?.title || ''}`);
         saveState();
@@ -2041,8 +2163,9 @@
       e.preventDefault();
       const trip = state.trips.find(t => t.id === selectedTripId);
       if (!trip) return;
+      if (!isTripParticipant(trip)) return toast('Сначала нажмите «Участвовать в поездке»');
       const fd = new FormData(e.target);
-      const item = { id: uid(), title: fd.get('title').trim(), amount: Number(fd.get('amount') || 0), responsibleId: fd.get('responsibleId') };
+      const item = { id: uid(), title: fd.get('title').trim(), amount: Number(fd.get('amount') || 0), responsibleId: fd.get('responsibleId'), createdById: currentUserId };
       trip.moneyPools = trip.moneyPools || [];
       trip.moneyPools.push(item);
       addTripLog(trip, `Добавлена общая покупка: ${item.title} на ${money(item.amount)}. Покупает ${userName(item.responsibleId)}`);
@@ -2070,6 +2193,7 @@
       e.preventDefault();
       const trip = state.trips.find(t => t.id === selectedTripId);
       if (!trip) return;
+      if (!isTripParticipant(trip)) return toast('Сначала нажмите «Участвовать в поездке»');
       const fd = new FormData(e.target);
       const name = fd.get('name').trim();
       const meta = getProductMeta(name);
@@ -2172,7 +2296,7 @@
       }
     });
 
-    if (currentUser()) showApp(); else showAuth();
+    initApp();
   </script>
 </body>
 </html>
