@@ -1164,6 +1164,9 @@
     let tripDetailMode = 'overview';
     let cloudReady = false;
     let cloudSaveTimer = null;
+    let cloudSaveInFlight = false;
+    let lastCloudStateJson = '';
+    let cloudRefreshTimer = null;
 
     function loadState() {
       try {
@@ -1231,15 +1234,22 @@
     async function saveCloudState() {
       const client = cloudClient();
       if (!client) return;
-      await client
-        .from(CLOUD_TABLE)
-        .upsert({ id: CLOUD_STATE_ID, data: state, updated_at: new Date().toISOString() }, { onConflict: 'id' });
+      cloudSaveInFlight = true;
+      try {
+        await client
+          .from(CLOUD_TABLE)
+          .upsert({ id: CLOUD_STATE_ID, data: state, updated_at: new Date().toISOString() }, { onConflict: 'id' });
+        lastCloudStateJson = JSON.stringify(state);
+      } finally {
+        cloudSaveInFlight = false;
+      }
     }
 
     function scheduleCloudSave() {
       if (!cloudReady) return;
       clearTimeout(cloudSaveTimer);
       cloudSaveTimer = setTimeout(() => {
+        cloudSaveTimer = null;
         saveCloudState().catch(() => toast('Не удалось сохранить изменения в облако'));
       }, 450);
     }
@@ -1247,6 +1257,52 @@
     function saveState() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
       scheduleCloudSave();
+    }
+
+    function applyCloudState(cloudState) {
+      state = cloudState;
+      migrateState(false);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      if (!state.trips.some(trip => trip.id === selectedTripId)) selectedTripId = state.trips[0]?.id || null;
+      if (currentUserId && !currentUser()) {
+        currentUserId = '';
+        localStorage.removeItem(SESSION_KEY);
+        showAuth();
+        return;
+      }
+      if (currentUser()) {
+        renderAll();
+        const modal = document.getElementById('tripDetailModal');
+        if (modal?.classList.contains('open')) renderTripDetail();
+      }
+    }
+
+    async function pullCloudState() {
+      if (!cloudReady || cloudSaveTimer || cloudSaveInFlight) return;
+      const client = cloudClient();
+      if (!client) return;
+      const { data, error } = await client
+        .from(CLOUD_TABLE)
+        .select('data')
+        .eq('id', CLOUD_STATE_ID)
+        .maybeSingle();
+      if (error || !data?.data) return;
+      const cloudState = { ...structuredClone(defaultState), ...data.data };
+      const cloudJson = JSON.stringify(cloudState);
+      if (cloudJson === lastCloudStateJson || cloudJson === JSON.stringify(state)) {
+        lastCloudStateJson = cloudJson;
+        return;
+      }
+      lastCloudStateJson = cloudJson;
+      applyCloudState(cloudState);
+      toast('Данные обновлены из облака');
+    }
+
+    function startCloudSync() {
+      clearInterval(cloudRefreshTimer);
+      cloudRefreshTimer = setInterval(() => {
+        pullCloudState().catch(() => {});
+      }, 5000);
     }
 
     async function loadCloudState() {
@@ -1277,6 +1333,7 @@
         state = shouldUploadLocal ? localSnapshot : cloudState;
         migrateState(false);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        lastCloudStateJson = JSON.stringify(state);
         cloudReady = true;
         if (shouldUploadLocal) await saveCloudState();
         return;
@@ -1284,6 +1341,7 @@
 
       migrateState(false);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      lastCloudStateJson = JSON.stringify(state);
       cloudReady = true;
       if (localStateAtStart) await saveCloudState();
     }
@@ -1300,6 +1358,7 @@
       }
       selectedTripId = state.trips[0]?.id || null;
       if (currentUser()) showApp(); else showAuth();
+      startCloudSync();
     }
 
     migrateState(false);
