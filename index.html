@@ -1106,6 +1106,26 @@
     const nowRu = () => new Date().toLocaleString('ru-RU', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
     const normalize = str => String(str || '').trim().toLowerCase().replace(/ё/g, 'е').replace(/\s+/g, ' ');
     const escapeHtml = str => String(str ?? '').replace(/[&<>"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+    function storageGet(key) {
+      try {
+        return window.localStorage.getItem(key);
+      } catch (e) {
+        return null;
+      }
+    }
+    function storageSet(key, value) {
+      try {
+        window.localStorage.setItem(key, value);
+        return true;
+      } catch (e) {
+        return false;
+      }
+    }
+    function storageRemove(key) {
+      try {
+        window.localStorage.removeItem(key);
+      } catch (e) {}
+    }
     async function sha256(text) {
       const bytes = new TextEncoder().encode(String(text));
       const digest = await crypto.subtle.digest('SHA-256', bytes);
@@ -1155,10 +1175,10 @@
       ]
     };
 
-    const hasLocalState = () => !!localStorage.getItem(STORAGE_KEY);
+    const hasLocalState = () => !!storageGet(STORAGE_KEY);
     const localStateAtStart = hasLocalState();
     let state = loadState();
-    let currentUserId = localStorage.getItem(SESSION_KEY) || '';
+    let currentUserId = storageGet(SESSION_KEY) || '';
     let activeView = 'trips';
     let selectedTripId = state.trips[0]?.id || null;
     let tripDetailMode = 'overview';
@@ -1170,7 +1190,7 @@
 
     function loadState() {
       try {
-        const raw = localStorage.getItem(STORAGE_KEY);
+        const raw = storageGet(STORAGE_KEY);
         if (!raw) return structuredClone(defaultState);
         const parsed = JSON.parse(raw);
         return { ...structuredClone(defaultState), ...parsed };
@@ -1255,18 +1275,18 @@
     }
 
     function saveState() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      storageSet(STORAGE_KEY, JSON.stringify(state));
       scheduleCloudSave();
     }
 
     function applyCloudState(cloudState) {
       state = cloudState;
       migrateState(false);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      storageSet(STORAGE_KEY, JSON.stringify(state));
       if (!state.trips.some(trip => trip.id === selectedTripId)) selectedTripId = state.trips[0]?.id || null;
       if (currentUserId && !currentUser()) {
         currentUserId = '';
-        localStorage.removeItem(SESSION_KEY);
+        storageRemove(SESSION_KEY);
         showAuth();
         return;
       }
@@ -1313,7 +1333,7 @@
       if (forceLocalUpload && localStateAtStart && hasRealLocalState(localSnapshot)) {
         state = localSnapshot;
         migrateState(false);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        storageSet(STORAGE_KEY, JSON.stringify(state));
         cloudReady = true;
         await saveCloudState();
         toast('Локальная база загружена в облако');
@@ -1332,7 +1352,7 @@
         const shouldUploadLocal = shouldPreferLocalState(localSnapshot, cloudState);
         state = shouldUploadLocal ? localSnapshot : cloudState;
         migrateState(false);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        storageSet(STORAGE_KEY, JSON.stringify(state));
         lastCloudStateJson = JSON.stringify(state);
         cloudReady = true;
         if (shouldUploadLocal) await saveCloudState();
@@ -1340,7 +1360,7 @@
       }
 
       migrateState(false);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      storageSet(STORAGE_KEY, JSON.stringify(state));
       lastCloudStateJson = JSON.stringify(state);
       cloudReady = true;
       if (localStateAtStart) await saveCloudState();
@@ -1354,7 +1374,7 @@
       }
       if (currentUserId && !currentUser()) {
         currentUserId = '';
-        localStorage.removeItem(SESSION_KEY);
+        storageRemove(SESSION_KEY);
       }
       selectedTripId = state.trips[0]?.id || null;
       if (currentUser()) showApp(); else showAuth();
@@ -2063,14 +2083,14 @@
         return;
       }
       currentUserId = u.id;
-      localStorage.setItem(SESSION_KEY, currentUserId);
+      storageSet(SESSION_KEY, currentUserId);
       document.getElementById('loginError').classList.add('hidden');
       showApp();
       toast('Вход выполнен');
     });
 
     document.getElementById('logoutBtn').addEventListener('click', () => {
-      localStorage.removeItem(SESSION_KEY);
+      storageRemove(SESSION_KEY);
       currentUserId = '';
       showAuth();
     });
