@@ -1,0 +1,2148 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Рыбакос — поездки и общие закупки</title>
+  <style>
+    :root {
+      --bg: #eef5f3;
+      --bg-2: #f8fbfa;
+      --card: rgba(255,255,255,.88);
+      --text: #10251f;
+      --muted: #64746f;
+      --line: rgba(16,37,31,.11);
+      --green: #1d8f69;
+      --green-dark: #0d5d46;
+      --green-2: #dff4ed;
+      --blue: #2e7fbf;
+      --blue-2: #e2f1fb;
+      --orange: #ef8a24;
+      --orange-2: #fff0df;
+      --red: #d65a4b;
+      --red-2: #ffe9e6;
+      --shadow: 0 20px 60px rgba(25, 70, 57, .14);
+      --shadow-sm: 0 10px 30px rgba(25, 70, 57, .10);
+      --radius: 26px;
+      --lake-art: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 420'%3E%3Cdefs%3E%3ClinearGradient id='sky' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0%25' stop-color='%23dff4ff'/%3E%3Cstop offset='100%25' stop-color='%2398d6ce'/%3E%3C/linearGradient%3E%3ClinearGradient id='lake' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0%25' stop-color='%2378c1b7'/%3E%3Cstop offset='100%25' stop-color='%23488e86'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='1200' height='420' fill='url(%23sky)'/%3E%3Cpath d='M0 205C90 185 145 170 245 176C355 184 428 150 530 164C621 176 679 223 775 216C887 208 930 154 1036 154C1110 154 1162 184 1200 201V420H0Z' fill='%2381b28a'/%3E%3Cpath d='M0 242C74 220 142 205 248 212C350 220 411 191 523 202C620 211 683 252 794 246C904 240 991 194 1090 208C1141 214 1174 222 1200 230V420H0Z' fill='%23487757'/%3E%3Cpath d='M0 276C106 250 194 252 315 266C433 279 555 267 673 254C790 241 918 242 1025 262C1093 274 1147 285 1200 292V420H0Z' fill='url(%23lake)'/%3E%3Cpath d='M0 314C111 298 239 312 355 329C502 352 630 350 761 329C901 307 1047 292 1200 316V420H0Z' fill='%23ffffff' fill-opacity='.18'/%3E%3Cpath d='M73 265L85 228L97 265Z' fill='%231d5f46'/%3E%3Crect x='81' y='265' width='8' height='29' rx='3' fill='%231d5f46'/%3E%3Cpath d='M132 252L147 210L162 252Z' fill='%231d5f46'/%3E%3Crect x='143' y='252' width='8' height='38' rx='3' fill='%231d5f46'/%3E%3Cpath d='M1032 252L1048 206L1064 252Z' fill='%231d5f46'/%3E%3Crect x='1043' y='252' width='8' height='36' rx='3' fill='%231d5f46'/%3E%3Cpath d='M1092 267L1103 232L1114 267Z' fill='%231d5f46'/%3E%3Crect x='1099' y='267' width='8' height='24' rx='3' fill='%231d5f46'/%3E%3C/svg%3E");
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--text);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.46), rgba(255,255,255,.58)),
+        radial-gradient(circle at 12% 8%, rgba(52, 155, 203, .22), transparent 34%),
+        radial-gradient(circle at 88% 3%, rgba(29, 143, 105, .26), transparent 30%),
+        var(--lake-art),
+        linear-gradient(145deg, #eaf4f1 0%, #f7fbfa 46%, #e5f1ee 100%);
+      background-size: auto, auto, auto, cover, auto;
+      background-attachment: fixed, fixed, fixed, fixed, fixed;
+      background-position: center, center, center, center top, center;
+    }
+
+    button, input, textarea, select { font: inherit; }
+    button { cursor: pointer; }
+    .hidden { display: none !important; }
+
+    .app {
+      width: min(1460px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 24px 0 48px;
+    }
+
+    .auth-shell {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+
+    .auth-card {
+      width: min(1080px, 100%);
+      display: grid;
+      grid-template-columns: 1.15fr .85fr;
+      gap: 18px;
+      align-items: stretch;
+    }
+
+    .auth-hero, .auth-form-card, .card, .panel {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 34px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+    }
+
+    .auth-hero {
+      position: relative;
+      overflow: hidden;
+      min-height: 560px;
+      padding: 34px;
+      background:
+        linear-gradient(135deg, rgba(8, 56, 46, .82), rgba(28, 132, 99, .72)),
+        linear-gradient(180deg, rgba(8,56,46,.30), rgba(8,56,46,.16)),
+        var(--lake-art);
+      background-size: auto, auto, cover;
+      background-position: center, center, center;
+      color: #fff;
+    }
+
+    .auth-hero:after {
+      content: "🎣";
+      position: absolute;
+      right: 24px;
+      bottom: -10px;
+      font-size: 210px;
+      opacity: .16;
+      transform: rotate(-12deg);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 900;
+      letter-spacing: -.04em;
+      font-size: 23px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .logo {
+      width: 50px;
+      height: 50px;
+      border-radius: 17px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(145deg, #0d3f34, #1d8f69);
+      box-shadow: var(--shadow-sm);
+      color: white;
+      font-size: 25px;
+      flex: 0 0 auto;
+    }
+
+    .auth-hero h1 {
+      position: relative;
+      z-index: 2;
+      margin: 82px 0 18px;
+      max-width: 720px;
+      font-size: clamp(36px, 5vw, 68px);
+      line-height: .94;
+      letter-spacing: -.075em;
+    }
+
+    .auth-hero p {
+      position: relative;
+      z-index: 2;
+      margin: 0;
+      max-width: 640px;
+      color: rgba(255,255,255,.78);
+      font-size: 18px;
+      line-height: 1.55;
+    }
+
+    .auth-points {
+      position: relative;
+      z-index: 2;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 42px;
+    }
+
+    .auth-point {
+      padding: 16px;
+      border-radius: 22px;
+      background: rgba(255,255,255,.13);
+      border: 1px solid rgba(255,255,255,.17);
+    }
+
+    .auth-point b { display: block; margin-bottom: 6px; }
+    .auth-point span { color: rgba(255,255,255,.68); font-size: 13px; line-height: 1.35; }
+
+    .auth-form-card { padding: 26px; }
+    .auth-form-card h2 { margin: 0 0 8px; font-size: 30px; letter-spacing: -.05em; }
+    .auth-form-card > p { margin: 0 0 20px; color: var(--muted); line-height: 1.45; }
+
+    .field { display: grid; gap: 7px; margin-bottom: 13px; }
+    .field label { font-size: 12px; font-weight: 900; color: var(--muted); text-transform: uppercase; letter-spacing: .07em; }
+    .field input, .field textarea, .field select {
+      width: 100%;
+      min-height: 48px;
+      border: 1px solid var(--line);
+      outline: none;
+      border-radius: 16px;
+      padding: 12px 14px;
+      background: rgba(255,255,255,.86);
+      color: var(--text);
+      transition: .18s ease;
+    }
+    .field textarea { resize: vertical; min-height: 92px; }
+    .field input:focus, .field textarea:focus, .field select:focus { border-color: rgba(29,143,105,.52); box-shadow: 0 0 0 4px rgba(29,143,105,.12); }
+
+    .btn {
+      border: 0;
+      min-height: 46px;
+      border-radius: 16px;
+      padding: 0 16px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: rgba(255,255,255,.75);
+      color: var(--text);
+      border: 1px solid var(--line);
+      font-weight: 900;
+      box-shadow: var(--shadow-sm);
+      transition: .18s ease;
+    }
+    .btn:hover { transform: translateY(-1px); box-shadow: 0 14px 32px rgba(25,70,57,.15); }
+    .btn-primary { background: linear-gradient(145deg, var(--green-dark), var(--green)); color: white; border-color: transparent; }
+    .btn-blue { background: linear-gradient(145deg, #1d5f94, var(--blue)); color: white; border-color: transparent; }
+    .btn-orange { background: linear-gradient(145deg, #b55f12, var(--orange)); color: white; border-color: transparent; }
+    .btn-red { background: var(--red-2); color: #a33b30; border-color: rgba(214,90,75,.25); box-shadow: none; }
+    .btn-ghost { box-shadow: none; background: rgba(255,255,255,.42); }
+    .btn-small { min-height: 36px; border-radius: 12px; padding: 0 11px; font-size: 13px; }
+    .btn-block { width: 100%; }
+
+    .demo-box, .notice {
+      border-radius: 20px;
+      padding: 15px;
+      background: var(--green-2);
+      color: #17634d;
+      font-size: 13px;
+      line-height: 1.45;
+      margin-top: 16px;
+      border: 1px solid rgba(29,143,105,.18);
+    }
+    .notice.orange { background: var(--orange-2); color: #9d520e; border-color: rgba(239,138,36,.22); }
+    .notice.red { background: var(--red-2); color: #96352c; border-color: rgba(214,90,75,.22); }
+    .notice.blue { background: var(--blue-2); color: #205d88; border-color: rgba(46,127,191,.22); }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .top-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+    .pill {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.72);
+      backdrop-filter: blur(16px);
+      border-radius: 999px;
+      padding: 10px 14px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+      white-space: nowrap;
+    }
+
+    .profile-mini {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,.78);
+      border-radius: 999px;
+      padding: 6px 12px 6px 6px;
+      font-weight: 900;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: linear-gradient(145deg, #0d3f34, #1d8f69);
+      color: white;
+      display: grid;
+      place-items: center;
+      font-weight: 950;
+      overflow: hidden;
+      flex: 0 0 auto;
+    }
+    .avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .avatar.big { width: 116px; height: 116px; font-size: 38px; border-radius: 32px; }
+    .avatar.sm { width: 30px; height: 30px; font-size: 12px; }
+
+    .tabs {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin: 18px 0 22px;
+    }
+    .tab {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(255,255,255,.65);
+      padding: 12px 16px;
+      color: var(--muted);
+      font-weight: 900;
+    }
+    .tab.active { background: var(--text); color: white; border-color: transparent; }
+
+    .hero {
+      border-radius: 36px;
+      padding: 28px;
+      min-height: 250px;
+      background:
+        linear-gradient(135deg, rgba(8, 56, 46, .80), rgba(28, 132, 99, .66)),
+        linear-gradient(180deg, rgba(8,56,46,.30), rgba(8,56,46,.12)),
+        var(--lake-art);
+      background-size: auto, auto, cover;
+      color: white;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      position: relative;
+      margin-bottom: 22px;
+    }
+    .hero:after {
+      content: "🛶";
+      position: absolute;
+      right: 38px;
+      bottom: -16px;
+      font-size: 160px;
+      opacity: .15;
+      transform: rotate(-8deg);
+    }
+    .hero-grid { position: relative; z-index: 2; display: grid; grid-template-columns: 1.2fr .8fr; gap: 24px; align-items: end; }
+    .hero h1 { margin: 0 0 12px; font-size: clamp(30px, 4vw, 58px); line-height: .96; letter-spacing: -.07em; max-width: 800px; }
+    .hero p { margin: 0; max-width: 690px; color: rgba(255,255,255,.76); font-size: 16px; line-height: 1.55; }
+    .hero-panel { background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.18); border-radius: 28px; padding: 18px; backdrop-filter: blur(16px); }
+    .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .stat { background: rgba(255,255,255,.14); border-radius: 20px; padding: 14px; }
+    .stat strong { display: block; font-size: 24px; letter-spacing: -.04em; }
+    .stat span { display: block; font-size: 12px; color: rgba(255,255,255,.68); margin-top: 3px; }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(330px, 420px) 1fr;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .panel, .card { padding: 20px; }
+    .panel-title, .card-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    h2, h3 { margin: 0; letter-spacing: -.045em; }
+    h2 { font-size: 28px; }
+    h3 { font-size: 22px; }
+    .muted { color: var(--muted); }
+    .small { font-size: 12px; }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .between { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+
+    .trip-list { display: grid; gap: 12px; }
+    .trip-card {
+      padding: 16px;
+      border-radius: 24px;
+      background: rgba(255,255,255,.72);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow-sm);
+      transition: .18s ease;
+    }
+    .trip-card:hover { transform: translateY(-1px); }
+    .trip-card.active { outline: 3px solid rgba(29,143,105,.22); border-color: rgba(29,143,105,.35); }
+    .trip-card h3 { margin: 0 0 8px; font-size: 20px; }
+    .trip-meta { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border-radius: 999px;
+      padding: 7px 10px;
+      font-size: 12px;
+      font-weight: 900;
+      background: rgba(16,37,31,.06);
+      color: var(--muted);
+      border: 1px solid rgba(16,37,31,.06);
+    }
+    .badge.green { background: var(--green-2); color: #17634d; }
+    .badge.blue { background: var(--blue-2); color: #205d88; }
+    .badge.orange { background: var(--orange-2); color: #9d520e; }
+    .badge.red { background: var(--red-2); color: #96352c; }
+
+    .section-grid { display: grid; gap: 16px; }
+    .subpanel {
+      border: 1px solid var(--line);
+      border-radius: 26px;
+      padding: 16px;
+      background: rgba(255,255,255,.66);
+      box-shadow: var(--shadow-sm);
+    }
+    .subpanel h3 { margin-bottom: 4px; }
+    .subpanel-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 14px; }
+
+    .progress {
+      height: 12px;
+      width: 100%;
+      border-radius: 999px;
+      background: rgba(16,37,31,.08);
+      overflow: hidden;
+    }
+    .progress > span {
+      display: block;
+      height: 100%;
+      width: 0%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--green), #58c99f);
+    }
+
+    .money-item, .food-item, .user-item, .log-item {
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 14px;
+      background: rgba(255,255,255,.72);
+      margin-bottom: 10px;
+    }
+    .money-item:last-child, .food-item:last-child, .user-item:last-child, .log-item:last-child { margin-bottom: 0; }
+    .money-top, .food-top, .user-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+    .money-title, .food-title { font-weight: 950; font-size: 16px; letter-spacing: -.02em; }
+    .amount { font-weight: 950; letter-spacing: -.03em; }
+    .pay-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+    .pay-chip {
+      display: inline-flex;
+      gap: 6px;
+      align-items: center;
+      padding: 6px 9px;
+      border-radius: 999px;
+      background: rgba(16,37,31,.06);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+    .pay-chip.paid { background: var(--green-2); color: #17634d; }
+
+    .balance-list { display: grid; gap: 10px; margin-bottom: 16px; }
+    .balance-row {
+      display: grid;
+      grid-template-columns: minmax(180px, 1fr) minmax(150px, auto) minmax(150px, auto) minmax(190px, auto);
+      gap: 10px;
+      align-items: center;
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 12px;
+      background: rgba(255,255,255,.72);
+    }
+    .balance-main { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .balance-value span { display: block; color: var(--muted); font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; }
+    .balance-value b { display: block; margin-top: 3px; font-size: 15px; }
+    .settlement-list { display: grid; gap: 8px; }
+    .settlement-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+      border-radius: 16px;
+      background: rgba(16,37,31,.045);
+      border: 1px solid rgba(16,37,31,.06);
+      font-weight: 850;
+    }
+    .compact-money-table td:last-child, .compact-money-table th:last-child { text-align: right; }
+
+    .empty {
+      padding: 22px;
+      border: 1px dashed rgba(16,37,31,.18);
+      border-radius: 22px;
+      color: var(--muted);
+      background: rgba(255,255,255,.42);
+      text-align: center;
+      line-height: 1.45;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      overflow: hidden;
+      border-radius: 18px;
+      background: rgba(255,255,255,.72);
+    }
+    th, td { text-align: left; padding: 12px 10px; border-bottom: 1px solid var(--line); font-size: 13px; vertical-align: top; }
+    th { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .07em; }
+    tr:last-child td { border-bottom: 0; }
+
+
+
+    .dashboard-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 16px;
+      margin: 10px 0 18px;
+    }
+    .dashboard-head h1 {
+      margin: 0 0 8px;
+      font-size: clamp(32px, 4vw, 56px);
+      line-height: .98;
+      letter-spacing: -.07em;
+    }
+    .dashboard-head p { margin: 0; color: var(--muted); max-width: 720px; line-height: 1.5; }
+
+    .trips-toolbar {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: end;
+      margin-bottom: 16px;
+    }
+    .trip-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+    .trip-card-large {
+      min-height: 248px;
+      padding: 20px;
+      border-radius: 30px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.80), rgba(255,255,255,.92)),
+        var(--lake-art);
+      background-size: auto, cover;
+      background-position: center, center;
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow-sm);
+      transition: .18s ease;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
+    }
+    .trip-card-large:after {
+      content: "🎣";
+      position: absolute;
+      right: 14px;
+      bottom: -22px;
+      font-size: 96px;
+      opacity: .08;
+      transform: rotate(-12deg);
+    }
+    .trip-card-large:hover { transform: translateY(-2px); box-shadow: 0 18px 44px rgba(25,70,57,.16); }
+    .trip-card-large h3 { font-size: 25px; margin-bottom: 10px; position: relative; z-index: 2; }
+    .trip-card-large .open-hint { color: var(--green-dark); font-weight: 950; font-size: 13px; position: relative; z-index: 2; }
+    .trip-facts { display: grid; gap: 10px; margin: 12px 0 14px; position: relative; z-index: 2; }
+    .trip-fact { display: flex; gap: 10px; align-items: flex-start; color: var(--muted); line-height: 1.35; }
+    .trip-fact b { color: var(--text); }
+    .participants-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; position: relative; z-index: 2; }
+    .avatar-stack { display: flex; align-items: center; }
+    .avatar-stack .avatar { margin-left: -8px; border: 2px solid white; }
+    .avatar-stack .avatar:first-child { margin-left: 0; }
+
+    .trip-detail-modal { width: min(1240px, calc(100vw - 24px)); }
+    .trip-window-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: flex-start;
+      margin-bottom: 16px;
+    }
+    .trip-window-head h2 { font-size: clamp(28px, 4vw, 44px); line-height: 1; }
+    .trip-info-card {
+      border-radius: 28px;
+      padding: 18px;
+      background:
+        linear-gradient(145deg, rgba(13,93,70,.82), rgba(29,143,105,.74)),
+        linear-gradient(180deg, rgba(8,56,46,.26), rgba(8,56,46,.10)),
+        var(--lake-art);
+      background-size: auto, auto, cover;
+      color: white;
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 16px;
+      position: relative;
+      overflow: hidden;
+    }
+    .trip-info-card:after {
+      content: "🛶";
+      position: absolute;
+      right: 18px;
+      bottom: -22px;
+      font-size: 104px;
+      opacity: .12;
+      transform: rotate(-10deg);
+    }
+    .trip-info-card .grid-3, .trip-info-card .participants-row, .trip-info-card .notice { position: relative; z-index: 2; }
+    .trip-info-card .muted { color: rgba(255,255,255,.74); }
+    .trip-info-card .notice { background: rgba(255,255,255,.14); color: rgba(255,255,255,.88); border-color: rgba(255,255,255,.18); }
+    .trip-info-card p { margin: 8px 0 0; }
+
+    .section-cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .action-card {
+      border: 1px solid var(--line);
+      border-radius: 30px;
+      padding: 20px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.84), rgba(255,255,255,.92)),
+        var(--lake-art);
+      background-size: auto, cover;
+      background-position: center, center;
+      box-shadow: var(--shadow-sm);
+      transition: .18s ease;
+      min-height: 210px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .action-card:hover { transform: translateY(-2px); box-shadow: 0 18px 44px rgba(25,70,57,.15); }
+    .action-card h3 { font-size: 25px; }
+    .big-number { font-size: 34px; line-height: 1; font-weight: 950; letter-spacing: -.06em; margin: 8px 0 4px; }
+    .summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 14px; }
+    .summary-cell { border-radius: 18px; padding: 12px; background: rgba(16,37,31,.05); }
+    .summary-cell span { display: block; color: var(--muted); font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: .06em; }
+    .summary-cell b { display: block; margin-top: 4px; font-size: 17px; }
+
+    .money-toolbar, .products-toolbar {
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+    .mini-stat-row { display:flex; flex-wrap:wrap; gap:10px; }
+    .money-summary-pill {
+      border-radius: 18px;
+      padding: 10px 12px;
+      background: rgba(16,37,31,.05);
+      border: 1px solid rgba(16,37,31,.08);
+      min-width: 140px;
+    }
+    .money-summary-pill span { display:block; color: var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:.06em; font-weight:900; }
+    .money-summary-pill b { display:block; margin-top:4px; }
+
+    .product-icons { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+    .product-icon {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      background: var(--orange-2);
+      color: #9d520e;
+      border: 1px solid rgba(239,138,36,.22);
+      font-weight: 900;
+      font-size: 12px;
+    }
+
+    .catalog-hint {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .food-table-wrap {
+      width: 100%;
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      background: rgba(255,255,255,.72);
+      box-shadow: var(--shadow-sm);
+    }
+    .food-matrix {
+      width: 100%;
+      min-width: 860px;
+      border-collapse: collapse;
+    }
+    .food-matrix th, .food-matrix td {
+      padding: 12px;
+      border-bottom: 1px solid rgba(16,37,31,.08);
+      vertical-align: top;
+      text-align: left;
+    }
+    .food-matrix th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: rgba(248,251,250,.96);
+      color: var(--muted);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      font-weight: 950;
+      white-space: nowrap;
+    }
+    .food-matrix tbody tr:last-child td { border-bottom: 0; }
+    .food-matrix tbody tr:hover td { background: rgba(29,143,105,.045); }
+    .category-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 9px;
+      border-radius: 999px;
+      background: rgba(16,37,31,.06);
+      color: var(--text);
+      font-size: 12px;
+      font-weight: 950;
+      white-space: nowrap;
+    }
+    .product-name-main { font-weight: 950; letter-spacing: -.02em; white-space: nowrap; }
+    .food-cell-list { display: grid; gap: 7px; min-width: 150px; }
+    .food-cell-item {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 7px;
+      align-items: start;
+      padding: 9px;
+      border-radius: 15px;
+      background: rgba(239,138,36,.10);
+      border: 1px solid rgba(239,138,36,.18);
+      min-width: 140px;
+      max-width: 230px;
+    }
+    .food-cell-item.bought {
+      background: var(--green-2);
+      border-color: rgba(29,143,105,.24);
+    }
+    .food-card-title {
+      font-weight: 950;
+      letter-spacing: -.02em;
+      line-height: 1.15;
+      font-size: 13px;
+    }
+    .food-card-qty { color: var(--muted); font-size: 12px; margin-top: 3px; }
+    .food-card-actions { display: flex; gap: 4px; align-items: center; }
+    .icon-action {
+      width: 28px;
+      height: 28px;
+      border-radius: 10px;
+      border: 1px solid rgba(16,37,31,.12);
+      background: rgba(255,255,255,.82);
+      display: inline-grid;
+      place-items: center;
+      font-size: 13px;
+      font-weight: 950;
+      padding: 0;
+      box-shadow: none;
+    }
+    .icon-action.bought { background: var(--green-2); color: #17634d; border-color: rgba(29,143,105,.24); }
+    .icon-action.planned { background: var(--orange-2); color: #9d520e; border-color: rgba(239,138,36,.24); }
+    .icon-action.delete { background: var(--red-2); color: #96352c; border-color: rgba(214,90,75,.24); }
+    .suggestions-grid { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 14px; }
+    .suggestion-chip {
+      border: 1px solid rgba(29,143,105,.18);
+      background: var(--green-2);
+      color: #17634d;
+      border-radius: 999px;
+      padding: 8px 10px;
+      font-weight: 900;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .modal-card.narrow { width: min(760px, calc(100vw - 24px)); }
+    .screen-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom: 16px; }
+    .screen-head h3 { font-size: 28px; }
+    .section-note { margin: -4px 0 14px; color: var(--muted); line-height: 1.45; }
+
+    .profile-grid { display: grid; grid-template-columns: 180px 1fr; gap: 18px; align-items: start; }
+    .avatar-uploader { display: grid; gap: 12px; justify-items: center; }
+
+    .admin-layout { display: grid; grid-template-columns: minmax(320px, 420px) 1fr; gap: 18px; align-items: start; }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(6, 22, 18, .42);
+      display: none;
+      place-items: center;
+      padding: 18px;
+      z-index: 99;
+    }
+    .modal.open { display: grid; }
+    .modal-card {
+      width: min(860px, calc(100vw - 24px));
+      max-height: 92vh;
+      overflow: auto;
+      background: rgba(255,255,255,.95);
+      border-radius: 32px;
+      padding: 22px;
+      box-shadow: 0 30px 90px rgba(3,15,12,.32);
+      border: 1px solid rgba(255,255,255,.35);
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 22px;
+      transform: translateX(-50%) translateY(20px);
+      opacity: 0;
+      pointer-events: none;
+      padding: 13px 16px;
+      border-radius: 16px;
+      background: #10251f;
+      color: white;
+      font-weight: 800;
+      box-shadow: var(--shadow);
+      z-index: 120;
+      transition: .2s ease;
+      max-width: min(520px, calc(100% - 30px));
+      text-align: center;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    @media (max-width: 1050px) {
+      .auth-card, .layout, .hero-grid, .admin-layout { grid-template-columns: 1fr; }
+      .auth-hero { min-height: auto; }
+      .auth-hero h1 { margin-top: 54px; }
+    }
+    @media (max-width: 720px) {
+      .app { width: min(100% - 20px, 1460px); padding-top: 14px; }
+      .auth-shell { padding: 10px; }
+      .auth-hero, .auth-form-card, .hero, .card, .panel { border-radius: 24px; padding: 18px; }
+      .auth-points, .stats, .grid-2, .grid-3, .profile-grid { grid-template-columns: 1fr; }
+
+      .trip-grid, .section-cards, .summary-grid, .balance-row { grid-template-columns: 1fr; }
+      .dashboard-head, .trips-toolbar, .trip-window-head { align-items: stretch; flex-direction: column; grid-template-columns: 1fr; }
+      .trip-card-large { min-height: 220px; padding: 16px; }
+      .trip-card-large h3 { font-size: 22px; }
+      .screen-head h3 { font-size: 24px; }
+      .modal { padding: 10px; align-items: end; }
+      .modal-card, .modal-card.narrow, .trip-detail-modal {
+        width: calc(100vw - 12px);
+        max-height: 95vh;
+        border-radius: 24px;
+        padding: 16px;
+      }
+      .food-cell-list { min-width: 120px; }
+      .food-cell-item { min-width: 112px; max-width: 180px; padding: 7px; }
+      .food-card-title { font-size: 12px; }
+      .icon-action { width: 26px; height: 26px; border-radius: 9px; }
+      .money-toolbar, .products-toolbar { align-items: stretch; }
+      .money-toolbar > *, .products-toolbar > * { width: 100%; }
+
+      .topbar { align-items: flex-start; flex-direction: column; }
+      .top-actions { justify-content: flex-start; }
+      .hero h1 { font-size: 34px; }
+      table { display: block; overflow-x: auto; }
+    }
+  </style>
+</head>
+<body>
+  <section id="authScreen" class="auth-shell">
+    <div class="auth-card">
+      <div class="auth-hero">
+        <div class="brand"><div class="logo">🐟</div><span>Рыбакос Trips</span></div>
+        <h1>Поездки, сборы и закупки без хаоса</h1>
+        <p>Администратор заранее создаёт логины и пароли для рыбаков. После входа каждый заполняет простой профиль, видит поездки, скидывается на общие закупки и отмечает, кто что покупает из еды.</p>
+        <div class="auth-points">
+          <div class="auth-point"><b>🔐 Без регистрации</b><span>доступы выдаёт администратор</span></div>
+          <div class="auth-point"><b>🗓 Карточки поездок</b><span>куда, когда, участники и сборы</span></div>
+          <div class="auth-point"><b>🍖 Без дублей</b><span>еда закрепляется за конкретным рыбаком</span></div>
+        </div>
+      </div>
+      <div class="auth-form-card">
+        <h2>Вход</h2>
+        <p>Введите логин и пароль, которые выдал администратор поездки.</p>
+        <form id="loginForm">
+          <div class="field">
+            <label for="loginInput">Логин</label>
+            <input id="loginInput" autocomplete="username" placeholder="например: Максим" required />
+          </div>
+          <div class="field">
+            <label for="passwordInput">Пароль</label>
+            <input id="passwordInput" type="password" autocomplete="current-password" placeholder="пароль" required />
+          </div>
+          <button class="btn btn-primary btn-block" type="submit">Войти в кабинет</button>
+        </form>
+        <div id="loginError" class="notice red hidden"></div>
+        <div class="notice orange">
+          Это HTML-прототип без сервера. Пароли в прототипе не хранятся открытым текстом: для проверки используется SHA-256 хэш. Для настоящего сайта авторизацию нужно переносить на сервер.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <main id="mainApp" class="app hidden">
+    <div class="topbar">
+      <div class="brand"><div class="logo">🐟</div><span>Рыбакос Trips</span></div>
+      <div class="top-actions">
+        <span class="pill" id="rolePill">Роль</span>
+        <div class="profile-mini" id="profileMini"></div>
+        <button class="btn btn-ghost" id="logoutBtn">Выйти</button>
+      </div>
+    </div>
+
+    <div class="tabs" id="tabs"></div>
+
+    <section id="tripsView" class="view">
+      <div class="dashboard-head">
+        <div>
+          <h1>Мои рыбалки</h1>
+          <p>После входа рыбак видит только карточки поездок: куда едем, когда едем и кто участвует. Все сборы и продукты открываются уже внутри конкретной поездки.</p>
+        </div>
+        <button class="btn btn-primary" id="openTripModalBtn">+ Создать поездку</button>
+      </div>
+
+      <div class="trips-toolbar">
+        <div class="field" style="margin-bottom:0;">
+          <label>Поиск поездки</label>
+          <input id="tripSearch" placeholder="Куда едем, дата, участник..." />
+        </div>
+        <span class="pill" id="tripCountPill">0 поездок</span>
+      </div>
+
+      <div class="trip-grid" id="tripCardsGrid"></div>
+    </section>
+
+    <section id="profileView" class="view hidden">
+      <div class="card">
+        <div class="card-title">
+          <div>
+            <h2>Профиль рыбака</h2>
+            <div class="muted small">Фото, имя и мобильный телефон — самый простой профиль для координации</div>
+          </div>
+        </div>
+        <div class="profile-grid">
+          <div class="avatar-uploader">
+            <div class="avatar big" id="profileAvatarBig"></div>
+            <label class="btn btn-ghost btn-small" for="avatarInput">Загрузить фото</label>
+            <input id="avatarInput" type="file" accept="image/*" class="hidden" />
+          </div>
+          <form id="profileForm">
+            <div class="grid-2">
+              <div class="field">
+                <label>Имя</label>
+                <input id="profileName" placeholder="Имя рыбака" required />
+              </div>
+              <div class="field">
+                <label>Мобильный телефон</label>
+                <input id="profilePhone" placeholder="+7 900 000-00-00" />
+              </div>
+            </div>
+            <button class="btn btn-primary" type="submit">Сохранить профиль</button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <section id="adminView" class="view hidden">
+      <div class="admin-layout">
+        <div class="panel">
+          <div class="panel-title">
+            <div>
+              <h2>Администратор</h2>
+              <div class="muted small">Создание доступов без окна регистрации</div>
+            </div>
+          </div>
+          <form id="userForm">
+            <div class="grid-2">
+              <div class="field"><label>Логин</label><input id="newLogin" required placeholder="petr" /></div>
+              <div class="field"><label>Пароль</label><input id="newPassword" required placeholder="1234" /></div>
+            </div>
+            <div class="grid-2">
+              <div class="field"><label>Имя</label><input id="newName" placeholder="Пётр" /></div>
+              <div class="field"><label>Телефон</label><input id="newPhone" placeholder="+7..." /></div>
+            </div>
+            <div class="field"><label>Роль</label><select id="newRole"><option value="fisher">Рыбак</option><option value="admin">Администратор</option></select></div>
+            <button class="btn btn-primary" type="submit">Добавить пользователя</button>
+          </form>
+          <div class="notice blue">Администратор создаёт логин и пароль, передаёт их рыбаку, а сам рыбак после входа заполняет фото, имя и телефон.</div>
+        </div>
+        <div class="panel">
+          <div class="panel-title">
+            <div>
+              <h2>Пользователи и история входов</h2>
+              <div class="muted small">Кто имеет доступ и когда были попытки авторизации</div>
+            </div>
+          </div>
+          <div id="usersList"></div>
+          <div class="subpanel" style="margin-top:14px;">
+            <div class="subpanel-head">
+              <div><h3>История авторизации</h3><div class="muted small">успешные и неуспешные входы</div></div>
+              <button class="btn btn-red btn-small" id="clearLogBtn">Очистить</button>
+            </div>
+            <div id="authLogList"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="modal" id="tripModal">
+    <div class="modal-card">
+      <div class="between" style="margin-bottom:14px;">
+        <div>
+          <h2>Новая поездка</h2>
+          <div class="muted small">Куда и когда едем</div>
+        </div>
+        <button class="btn btn-ghost btn-small" data-close-modal>✕</button>
+      </div>
+      <form id="tripForm">
+        <div class="grid-2">
+          <div class="field"><label>Название поездки</label><input id="tripTitle" required placeholder="Кольский выезд на озеро" /></div>
+          <div class="field"><label>Куда едем</label><input id="tripDestination" required placeholder="Ёнский, Мурманская область" /></div>
+        </div>
+        <div class="grid-2">
+          <div class="field"><label>Дата выезда</label><input id="tripStart" type="date" required /></div>
+          <div class="field"><label>Дата возвращения</label><input id="tripEnd" type="date" /></div>
+        </div>
+        <div class="field"><label>Место сбора</label><input id="tripMeeting" placeholder="АЗС, парковка, адрес" /></div>
+        <div class="field"><label>Комментарий</label><textarea id="tripNotes" placeholder="Лодки, моторы, палатки, особенности маршрута"></textarea></div>
+        <button class="btn btn-primary" type="submit">Создать карточку поездки</button>
+      </form>
+    </div>
+  </div>
+
+
+
+  <div class="modal" id="tripDetailModal">
+    <div class="modal-card trip-detail-modal">
+      <div id="tripDetailWindow"></div>
+    </div>
+  </div>
+
+  <div class="modal" id="productModal">
+    <div class="modal-card narrow">
+      <div class="between" style="margin-bottom:14px;">
+        <div>
+          <h2>Добавить продукт</h2>
+          <div class="muted small">Что покупает участник. Система подсказывает продукты из каталога и историю прошлых покупок.</div>
+        </div>
+        <button class="btn btn-ghost btn-small" data-close-product-modal>✕</button>
+      </div>
+      <div id="productSuggestions"></div>
+      <form id="productModalForm">
+        <div class="field">
+          <label>Что купить</label>
+          <input id="productNameInput" name="name" list="productCatalogList" required placeholder="Водка, виски, Coca-Cola, хлеб" />
+        </div>
+        <div class="grid-2">
+          <div class="field"><label>Объём / количество</label><input id="productQtyInput" name="qty" placeholder="2 кг / 5 шт / 10 л" /></div>
+          <div class="field"><label>Кто покупает</label><select id="productAssignedSelect" name="assignedUserId"></select></div>
+        </div>
+        <button class="btn btn-orange" type="submit">Добавить в список</button>
+      </form>
+      <div id="productCatalogMount"></div>
+    </div>
+  </div>
+
+
+  <div class="modal" id="moneyModal">
+    <div class="modal-card narrow">
+      <div class="between" style="margin-bottom:14px;">
+        <div>
+          <h2>Добавить общую покупку</h2>
+          <div class="muted small">Укажите покупку, её общую стоимость и кто берёт эту покупку на себя.</div>
+        </div>
+        <button class="btn btn-ghost btn-small" data-close-money-modal>✕</button>
+      </div>
+      <form id="moneyModalForm">
+        <div class="field">
+          <label>Название покупки</label>
+          <input id="moneyTitleInput" name="title" required placeholder="Бензин, наживка, аренда домика" />
+        </div>
+        <div class="grid-2">
+          <div class="field"><label>Общая стоимость, ₽</label><input id="moneyAmountInput" name="amount" type="number" min="0" step="100" required placeholder="10000" /></div>
+          <div class="field"><label>Кто покупает / оплачивает</label><select id="moneyResponsibleSelect" name="responsibleId"></select></div>
+        </div>
+        <button class="btn btn-primary" type="submit">Добавить общую покупку</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal" id="tripLogModal">
+    <div class="modal-card narrow">
+      <div class="between" style="margin-bottom:14px;">
+        <div>
+          <h2>Журнал действий</h2>
+          <div class="muted small" id="tripLogSubtitle">История изменений по поездке</div>
+        </div>
+        <button class="btn btn-ghost btn-small" data-close-log-modal>✕</button>
+      </div>
+      <div id="tripLogModalContent"></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const STORAGE_KEY = 'rybakosTripsStateV5';
+    const SESSION_KEY = 'rybakosTripsSessionV5';
+    const ADMIN_PASSWORD_SALT = 'rybakos-admin-2026-07-02-v1';
+    const ADMIN_PASSWORD_HASH = 'ccec77f747f7b07b679055c815850cb86b54e7aed5c56b4f11d11d3587b1075a';
+
+    const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
+    const money = n => (Number(n) || 0).toLocaleString('ru-RU') + ' ₽';
+    const dateRu = value => value ? new Date(value + 'T00:00:00').toLocaleDateString('ru-RU', { day:'2-digit', month:'short', year:'numeric' }) : 'дата не указана';
+    const nowRu = () => new Date().toLocaleString('ru-RU', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+    const normalize = str => String(str || '').trim().toLowerCase().replace(/ё/g, 'е').replace(/\s+/g, ' ');
+    const escapeHtml = str => String(str ?? '').replace(/[&<>"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+    async function sha256(text) {
+      const bytes = new TextEncoder().encode(String(text));
+      const digest = await crypto.subtle.digest('SHA-256', bytes);
+      return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+    async function hashPassword(password, salt) {
+      return sha256(`${salt}:${password}`);
+    }
+    async function verifyPassword(user, password) {
+      if (!user) return false;
+      const hash = await hashPassword(password, user.passwordSalt || '');
+      return user.passwordHash === hash;
+    }
+
+    const defaultState = {
+      users: [
+        { id: 'u_maksim', login: 'Максим', passwordSalt: ADMIN_PASSWORD_SALT, passwordHash: ADMIN_PASSWORD_HASH, role: 'admin', profile: { name: 'Максим', phone: '', avatar: '' } }
+      ],
+      authLog: [],
+      trips: [
+        {
+          id: 't_kola',
+          title: 'Выезд на северное озеро',
+          destination: 'Ёнский, Мурманская область',
+          startDate: '2026-07-18',
+          endDate: '2026-07-21',
+          meetingPoint: 'Сбор у гаража в 06:30',
+          notes: 'Берём лодку, мотор, палатки. Проверить топливо и спасжилеты.',
+          organizerId: 'u_maksim',
+          participants: [],
+          moneyPools: [
+            { id: 'm_fuel', title: 'Бензин для машины и лодки', amount: 10000, responsibleId: 'u_maksim' },
+            { id: 'm_bait', title: 'Наживка и расходники', amount: 5000, responsibleId: 'u_maksim' }
+          ],
+          foodItems: [
+            { id: 'f_meat', name: 'Шашлык', qty: '4 кг', assignedUserId: 'u_maksim', createdById: 'u_maksim', status: 'planned' },
+            { id: 'f_water', name: 'Питьевая вода', qty: '20 л', assignedUserId: 'u_maksim', createdById: 'u_maksim', status: 'bought' },
+            { id: 'f_vodka_maksim', name: 'Водка', qty: '2 бутылки', assignedUserId: 'u_maksim', createdById: 'u_maksim', status: 'planned' },
+            { id: 'f_cola', name: 'Coca-Cola', qty: '6 л', assignedUserId: 'u_maksim', createdById: 'u_maksim', status: 'planned' },
+            { id: 'f_cheese', name: 'Сыр', qty: '1 кг', assignedUserId: 'u_maksim', createdById: 'u_maksim', status: 'planned' }
+          ],
+          log: [
+            { at: 'демо', text: 'Создана карточка поездки' },
+            { at: 'демо', text: 'Добавлены первые общие сборы и список еды' }
+          ]
+        }
+      ]
+    };
+
+    let state = loadState();
+    let currentUserId = localStorage.getItem(SESSION_KEY) || '';
+    let activeView = 'trips';
+    let selectedTripId = state.trips[0]?.id || null;
+    let tripDetailMode = 'overview';
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return structuredClone(defaultState);
+        const parsed = JSON.parse(raw);
+        return { ...structuredClone(defaultState), ...parsed };
+      } catch(e) {
+        return structuredClone(defaultState);
+      }
+    }
+    function migrateState() {
+      state.users = state.users || [];
+      let maksim = state.users.find(u => u.id === 'u_maksim' || normalize(u.login) === 'максим');
+      if (!maksim) {
+        maksim = { id: 'u_maksim', login: 'Максим', passwordSalt: ADMIN_PASSWORD_SALT, passwordHash: ADMIN_PASSWORD_HASH, role: 'admin', profile: { name: 'Максим', phone: '', avatar: '' } };
+        state.users.unshift(maksim);
+      }
+      maksim.id = 'u_maksim';
+      maksim.login = 'Максим';
+      maksim.passwordSalt = ADMIN_PASSWORD_SALT;
+      maksim.passwordHash = ADMIN_PASSWORD_HASH;
+      maksim.role = 'admin';
+      maksim.profile = { name: 'Максим', phone: maksim.profile?.phone || '', avatar: maksim.profile?.avatar || '' };
+      state.productHistory = state.productHistory || {};
+      (state.trips || []).forEach(trip => {
+        (trip.foodItems || []).forEach(item => {
+          if (!item.createdById) item.createdById = item.addedById || item.assignedUserId || trip.organizerId || 'u_maksim';
+        });
+      });
+      saveState();
+    }
+
+    function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+    migrateState();
+    function currentUser() { return state.users.find(u => u.id === currentUserId); }
+    function userById(id) { return state.users.find(u => u.id === id); }
+    function userName(id) { return userById(id)?.profile?.name || userById(id)?.login || 'Не назначен'; }
+    function isAdmin() { return currentUser()?.role === 'admin'; }
+
+    function avatarHtml(user, cls = '') {
+      const name = user?.profile?.name || user?.login || '?';
+      const avatar = user?.profile?.avatar;
+      const initials = name.split(' ').map(x => x[0]).join('').slice(0,2).toUpperCase();
+      return `<div class="avatar ${cls}">${avatar ? `<img src="${avatar}" alt="">` : initials}</div>`;
+    }
+
+    function toast(text) {
+      const el = document.getElementById('toast');
+      el.textContent = text;
+      el.classList.add('show');
+      clearTimeout(toast.t);
+      toast.t = setTimeout(() => el.classList.remove('show'), 2400);
+    }
+
+    function addTripLog(trip, text) {
+      trip.log = trip.log || [];
+      trip.log.unshift({ at: nowRu(), text });
+    }
+
+    function showAuth() {
+      document.getElementById('authScreen').classList.remove('hidden');
+      document.getElementById('mainApp').classList.add('hidden');
+    }
+
+    function showApp() {
+      document.getElementById('authScreen').classList.add('hidden');
+      document.getElementById('mainApp').classList.remove('hidden');
+      renderAll();
+    }
+
+    function renderAll() {
+      const u = currentUser();
+      if (!u) return showAuth();
+      document.getElementById('rolePill').textContent = u.role === 'admin' ? 'Администратор' : 'Рыбак';
+      document.getElementById('profileMini').innerHTML = `${avatarHtml(u, 'sm')}<span>${escapeHtml(u.profile.name || u.login)}</span>`;
+      renderTabs();
+      renderViews();
+      renderHeroStats();
+      renderTrips();
+      renderProfile();
+      if (isAdmin()) renderAdmin();
+    }
+
+    function renderTabs() {
+      const tabs = [
+        { id:'trips', label:'🗓 Поездки и сборы' },
+        { id:'profile', label:'👤 Мой профиль' }
+      ];
+      if (isAdmin()) tabs.push({ id:'admin', label:'🔐 Администрирование' });
+      document.getElementById('tabs').innerHTML = tabs.map(t => `<button class="tab ${activeView === t.id ? 'active' : ''}" data-tab="${t.id}">${t.label}</button>`).join('');
+    }
+
+    function renderViews() {
+      document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
+      const target = document.getElementById(activeView + 'View');
+      if (target) target.classList.remove('hidden');
+    }
+
+    function visibleTrips() {
+      if (isAdmin()) return state.trips;
+      return state.trips.filter(t => (t.participants || []).includes(currentUserId));
+    }
+
+    function tripDateRange(trip) {
+      return `${dateRu(trip.startDate)}${trip.endDate ? ' — ' + dateRu(trip.endDate) : ''}`;
+    }
+
+    function participantNames(trip) {
+      return (trip.participants || []).map(id => userName(id)).join(', ') || 'участники не указаны';
+    }
+
+    function participantAvatars(trip, limit = 5) {
+      const ids = (trip.participants || []).slice(0, limit);
+      const rest = Math.max(0, (trip.participants || []).length - ids.length);
+      return `<div class="avatar-stack">${ids.map(id => avatarHtml(userById(id), 'sm')).join('')}${rest ? `<span class="badge">+${rest}</span>` : ''}</div>`;
+    }
+
+    function renderHeroStats() {
+      const pill = document.getElementById('tripCountPill');
+      if (pill) {
+        const count = visibleTrips().length;
+        pill.textContent = `${count} ${count === 1 ? 'поездка' : count > 1 && count < 5 ? 'поездки' : 'поездок'}`;
+      }
+    }
+
+    function renderTrips() {
+      const search = document.getElementById('tripSearch');
+      const q = normalize(search?.value || '');
+      let trips = visibleTrips();
+      if (q) {
+        trips = trips.filter(t => normalize([t.title, t.destination, t.meetingPoint, t.notes, participantNames(t), tripDateRange(t)].join(' ')).includes(q));
+      }
+      const grid = document.getElementById('tripCardsGrid');
+      if (!grid) return;
+      if (!trips.length) {
+        grid.innerHTML = '<div class="empty" style="grid-column:1/-1;">Пока нет поездок. Создайте первую карточку поездки.</div>';
+      } else {
+        grid.innerHTML = trips.map(t => `
+          <article class="trip-card-large" data-open-trip="${t.id}">
+            <div>
+              <h3>${escapeHtml(t.title)}</h3>
+              <div class="trip-facts">
+                <div class="trip-fact"><span>📍</span><div><span class="muted small">Куда</span><br><b>${escapeHtml(t.destination)}</b></div></div>
+                <div class="trip-fact"><span>📅</span><div><span class="muted small">Когда</span><br><b>${tripDateRange(t)}</b></div></div>
+                <div class="trip-fact"><span>👥</span><div><span class="muted small">Кто едет</span><br><b>${escapeHtml(participantNames(t))}</b></div></div>
+              </div>
+            </div>
+            <div class="participants-row">
+              ${participantAvatars(t)}
+              <span class="open-hint">Открыть поездку →</span>
+            </div>
+          </article>
+        `).join('');
+      }
+      renderHeroStats();
+      if (document.getElementById('tripDetailModal')?.classList.contains('open')) renderTripDetail();
+    }
+
+    function moneySummary(trip) {
+      const pools = trip.moneyPools || [];
+      const total = pools.reduce((s,m) => s + Number(m.amount || 0), 0);
+      const participants = trip.participants || [];
+      const participantsCount = Math.max(1, participants.length);
+      const perPerson = total / participantsCount;
+      const purchasedBy = {};
+      pools.forEach(m => {
+        const uid = m.responsibleId || 'none';
+        purchasedBy[uid] = (purchasedBy[uid] || 0) + Number(m.amount || 0);
+      });
+      return { count: pools.length, total, participantsCount, perPerson, purchasedBy };
+    }
+
+    function moneyBalances(trip) {
+      const summary = moneySummary(trip);
+      return (trip.participants || []).map(userId => {
+        const purchased = summary.purchasedBy[userId] || 0;
+        const delta = purchased - summary.perPerson;
+        return { userId, purchased, share: summary.perPerson, delta };
+      });
+    }
+
+    function settlementPlan(trip) {
+      const balances = moneyBalances(trip);
+      const debtors = balances
+        .filter(b => b.delta < -0.5)
+        .map(b => ({ ...b, amount: -b.delta }))
+        .sort((a,b) => b.amount - a.amount);
+      const creditors = balances
+        .filter(b => b.delta > 0.5)
+        .map(b => ({ ...b, amount: b.delta }))
+        .sort((a,b) => b.amount - a.amount);
+      const plan = [];
+      let i = 0, j = 0;
+      while (i < debtors.length && j < creditors.length) {
+        const amount = Math.min(debtors[i].amount, creditors[j].amount);
+        if (amount > 0.5) plan.push({ from: debtors[i].userId, to: creditors[j].userId, amount });
+        debtors[i].amount -= amount;
+        creditors[j].amount -= amount;
+        if (debtors[i].amount <= 0.5) i++;
+        if (creditors[j].amount <= 0.5) j++;
+      }
+      return plan;
+    }
+
+    function renderMoneyBalances(trip) {
+      const balances = moneyBalances(trip);
+      if (!balances.length) return '<div class="empty">Добавьте участников поездки, чтобы посчитать равные доли.</div>';
+      return `
+        <div class="balance-list">
+          ${balances.map(b => {
+            const badge = b.delta > 0.5
+              ? `<span class="badge green">ему должны докинуть ${money(b.delta)}</span>`
+              : b.delta < -0.5
+                ? `<span class="badge orange">надо доплатить ${money(Math.abs(b.delta))}</span>`
+                : `<span class="badge blue">расчёт ровный</span>`;
+            return `
+              <div class="balance-row">
+                <div class="balance-main">${avatarHtml(userById(b.userId), 'sm')}<b>${escapeHtml(userName(b.userId))}</b></div>
+                <div class="balance-value"><span>Доля в котёл</span><b>${money(b.share)}</b></div>
+                <div class="balance-value"><span>Покупает сам</span><b>${money(b.purchased)}</b></div>
+                <div>${badge}</div>
+              </div>`;
+          }).join('')}
+        </div>`;
+    }
+
+    function renderSettlementPlan(trip) {
+      const plan = settlementPlan(trip);
+      if (!plan.length) return '<div class="empty">Доплат между участниками сейчас нет: все расходы уже совпадают с равными долями.</div>';
+      return `
+        <div class="settlement-list">
+          ${plan.map(p => `
+            <div class="settlement-row">
+              <span>${escapeHtml(userName(p.from))} → ${escapeHtml(userName(p.to))}</span>
+              <b>${money(p.amount)}</b>
+            </div>
+          `).join('')}
+        </div>`;
+    }
+
+    const productCatalog = [
+      { canonical:'Водка', category:'Алкоголь', emoji:'🍾', aliases:['водка','водочка'] },
+      { canonical:'Виски', category:'Алкоголь', emoji:'🥃', aliases:['виски','whisky','whiskey'] },
+      { canonical:'Коньяк', category:'Алкоголь', emoji:'🥃', aliases:['коньяк','бренди','brandy'] },
+      { canonical:'Пиво', category:'Алкоголь', emoji:'🍺', aliases:['пиво','beer'] },
+      { canonical:'Вино', category:'Алкоголь', emoji:'🍷', aliases:['вино','wine'] },
+      { canonical:'Питьевая вода', category:'Напитки', emoji:'💧', aliases:['вода','питьевая вода','минералка','минеральная вода','вода питьевая'] },
+      { canonical:'Coca-Cola', category:'Напитки', emoji:'🥤', aliases:['coca-cola','coca cola','кока-кола','кока кола','кола','cola'] },
+      { canonical:'Pepsi', category:'Напитки', emoji:'🥤', aliases:['pepsi','пепси'] },
+      { canonical:'Сок', category:'Напитки', emoji:'🧃', aliases:['сок','нектар'] },
+      { canonical:'Морс', category:'Напитки', emoji:'🧃', aliases:['морс','компот'] },
+      { canonical:'Чай', category:'Напитки', emoji:'☕', aliases:['чай','заварка'] },
+      { canonical:'Кофе', category:'Напитки', emoji:'☕', aliases:['кофе'] },
+      { canonical:'Хлеб', category:'Хлеб и выпечка', emoji:'🍞', aliases:['хлеб','батон','багет','лаваш'] },
+      { canonical:'Булочки', category:'Хлеб и выпечка', emoji:'🥐', aliases:['булочки','булка','круассан','выпечка'] },
+      { canonical:'Колбаса', category:'Колбаса и нарезки', emoji:'🥓', aliases:['колбаса','сервелат','салями','нарезка мясная'] },
+      { canonical:'Сосиски', category:'Колбаса и нарезки', emoji:'🌭', aliases:['сосиски','сардельки'] },
+      { canonical:'Сыр', category:'Сыр и молочка', emoji:'🧀', aliases:['сыр','сырная нарезка'] },
+      { canonical:'Молоко', category:'Сыр и молочка', emoji:'🥛', aliases:['молоко'] },
+      { canonical:'Масло сливочное', category:'Сыр и молочка', emoji:'🧈', aliases:['масло сливочное','сливочное масло'] },
+      { canonical:'Шашлык', category:'Мясо и рыба', emoji:'🥩', aliases:['шашлык','маринованное мясо'] },
+      { canonical:'Мясо', category:'Мясо и рыба', emoji:'🥩', aliases:['мясо','свинина','говядина','курица','бедра','крылья'] },
+      { canonical:'Рыба', category:'Мясо и рыба', emoji:'🐟', aliases:['рыба','форель','семга','лосось'] },
+      { canonical:'Тушёнка', category:'Консервы', emoji:'🥫', aliases:['тушенка','тушёнка'] },
+      { canonical:'Рыбные консервы', category:'Консервы', emoji:'🥫', aliases:['консервы рыбные','сайра','шпроты','тунец консервированный'] },
+      { canonical:'Горошек / кукуруза', category:'Консервы', emoji:'🥫', aliases:['горошек','кукуруза консервированная','кукуруза'] },
+      { canonical:'Картошка', category:'Овощи и фрукты', emoji:'🥔', aliases:['картошка','картофель'] },
+      { canonical:'Огурцы', category:'Овощи и фрукты', emoji:'🥒', aliases:['огурцы','огурец'] },
+      { canonical:'Помидоры', category:'Овощи и фрукты', emoji:'🍅', aliases:['помидоры','помидор','томаты'] },
+      { canonical:'Лук', category:'Овощи и фрукты', emoji:'🧅', aliases:['лук'] },
+      { canonical:'Лимон', category:'Овощи и фрукты', emoji:'🍋', aliases:['лимон','лимоны'] },
+      { canonical:'Яблоки', category:'Овощи и фрукты', emoji:'🍎', aliases:['яблоки','яблоко'] },
+      { canonical:'Макароны', category:'Крупы и гарниры', emoji:'🍝', aliases:['макароны','паста','спагетти'] },
+      { canonical:'Рис', category:'Крупы и гарниры', emoji:'🍚', aliases:['рис'] },
+      { canonical:'Гречка', category:'Крупы и гарниры', emoji:'🥣', aliases:['гречка','греча'] },
+      { canonical:'Печенье', category:'Сладкое и снеки', emoji:'🍪', aliases:['печенье','печеньки'] },
+      { canonical:'Шоколад', category:'Сладкое и снеки', emoji:'🍫', aliases:['шоколад','батончики'] },
+      { canonical:'Чипсы', category:'Сладкое и снеки', emoji:'🍿', aliases:['чипсы','сухарики','снеки'] },
+      { canonical:'Соль', category:'Соусы и специи', emoji:'🧂', aliases:['соль'] },
+      { canonical:'Сахар', category:'Соусы и специи', emoji:'🧂', aliases:['сахар'] },
+      { canonical:'Кетчуп', category:'Соусы и специи', emoji:'🥫', aliases:['кетчуп','соус томатный'] },
+      { canonical:'Майонез', category:'Соусы и специи', emoji:'🥫', aliases:['майонез'] },
+      { canonical:'Одноразовая посуда', category:'Хозтовары', emoji:'🍽️', aliases:['одноразовая посуда','тарелки','стаканы','вилки','ложки'] },
+      { canonical:'Салфетки', category:'Хозтовары', emoji:'🧻', aliases:['салфетки','бумажные полотенца'] },
+      { canonical:'Мешки для мусора', category:'Хозтовары', emoji:'🗑️', aliases:['мешки для мусора','пакеты для мусора','мусорные пакеты'] },
+      { canonical:'Уголь / розжиг', category:'Костёр и мангал', emoji:'🔥', aliases:['уголь','розжиг','жидкость для розжига','дрова'] }
+    ];
+
+    const productCategoryOrder = ['Алкоголь','Напитки','Хлеб и выпечка','Колбаса и нарезки','Сыр и молочка','Мясо и рыба','Консервы','Овощи и фрукты','Крупы и гарниры','Сладкое и снеки','Соусы и специи','Хозтовары','Костёр и мангал','Другое'];
+    const productBaseIcons = [
+      ['🍞','Хлеб'], ['💧','Вода'], ['🥓','Колбаса'], ['🧀','Сыр'], ['🍾','Водка'], ['🥃','Виски'], ['🥤','Coca-Cola'], ['🥩','Шашлык'], ['🥔','Картошка'], ['🥫','Тушёнка']
+    ];
+
+    function matchCatalogItem(name) {
+      const n = normalize(name);
+      if (!n) return null;
+      return productCatalog.find(item => item.aliases.some(alias => n.includes(normalize(alias))));
+    }
+
+    function getProductMeta(name) {
+      const item = matchCatalogItem(name);
+      if (item) return { canonical: item.canonical, category: item.category, emoji: item.emoji };
+      return { canonical: String(name || 'Продукт').trim(), category: 'Другое', emoji: '🛒' };
+    }
+
+    function productEmoji(name) { return getProductMeta(name).emoji; }
+    function productCategory(name) { return getProductMeta(name).category; }
+    function productCanonical(name) { return getProductMeta(name).canonical; }
+    function productKey(name) { return normalize(productCanonical(name)); }
+
+    function renderProductDatalist() {
+      return `<datalist id="productCatalogList">${productCatalog.map(p => `<option value="${escapeHtml(p.canonical)}">${escapeHtml(p.category)}</option>`).join('')}</datalist>`;
+    }
+
+    function renderCatalogHint() {
+      const samples = [
+        ['🍾','Алкоголь: водка, виски, пиво'],
+        ['🥤','Напитки: вода, Coca-Cola, сок'],
+        ['🥩','Еда: мясо, сыр, колбаса'],
+        ['🧻','Хозтовары: посуда, салфетки']
+      ];
+      return `<div class="catalog-hint">${samples.map(([emoji, text]) => `<span class="product-icon">${emoji} ${escapeHtml(text)}</span>`).join('')}</div>`;
+    }
+
+    function renderProductIcons(trip) {
+      const items = trip.foodItems || [];
+      if (!items.length) return '';
+      const seen = new Set();
+      const list = [];
+      items.forEach(f => {
+        const meta = getProductMeta(f.name);
+        const key = normalize(meta.canonical);
+        if (!seen.has(key)) {
+          seen.add(key);
+          list.push([meta.emoji, meta.canonical]);
+        }
+      });
+      return `<div class="product-icons">${list.slice(0, 12).map(([emoji, name]) => `<span class="product-icon">${emoji} ${escapeHtml(name)}</span>`).join('')}</div>`;
+    }
+
+    function rememberProductPurchase(item) {
+      state.productHistory = state.productHistory || {};
+      const userId = item.assignedUserId || currentUserId;
+      state.productHistory[userId] = state.productHistory[userId] || [];
+      const meta = getProductMeta(item.name);
+      const key = productKey(item.name);
+      state.productHistory[userId] = state.productHistory[userId].filter(x => productKey(x.name) !== key);
+      state.productHistory[userId].unshift({ name: meta.canonical, qty: item.qty || '', category: meta.category, emoji: meta.emoji, at: nowRu() });
+      state.productHistory[userId] = state.productHistory[userId].slice(0, 16);
+    }
+
+    function productHistoryFor(userId) {
+      const map = new Map();
+      (state.productHistory?.[userId] || []).forEach(x => map.set(productKey(x.name), x));
+      (state.trips || []).forEach(trip => (trip.foodItems || []).forEach(f => {
+        if (f.assignedUserId === userId) {
+          const meta = getProductMeta(f.name);
+          const key = productKey(f.name);
+          if (!map.has(key)) map.set(key, { name: meta.canonical, qty: f.qty || '', category: meta.category, emoji: meta.emoji });
+        }
+      }));
+      return Array.from(map.values()).slice(0, 10);
+    }
+
+    function renderProductSuggestions(userId) {
+      const suggestions = productHistoryFor(userId || currentUserId);
+      const box = document.getElementById('productSuggestions');
+      if (!box) return;
+      if (!suggestions.length) {
+        box.innerHTML = `<div class="notice blue" style="margin:0 0 14px;">История покупок пока пустая. После первой добавленной позиции здесь появятся быстрые варианты.</div>`;
+        return;
+      }
+      box.innerHTML = `
+        <div class="muted small" style="margin-bottom:8px; font-weight:900; text-transform:uppercase; letter-spacing:.06em;">Ранее покупал этот участник</div>
+        <div class="suggestions-grid">
+          ${suggestions.map(s => `<button class="suggestion-chip" type="button" data-suggest-product="${escapeHtml(s.name)}" data-suggest-qty="${escapeHtml(s.qty || '')}">${s.emoji || '🛒'} ${escapeHtml(s.name)}${s.qty ? ` · ${escapeHtml(s.qty)}` : ''}</button>`).join('')}
+        </div>`;
+    }
+
+    function openProductModal() {
+      const trip = state.trips.find(t => t.id === selectedTripId);
+      if (!trip) return;
+      const select = document.getElementById('productAssignedSelect');
+      const participants = trip.participants || [];
+      select.innerHTML = participants.map(id => `<option value="${id}">${escapeHtml(userName(id))}</option>`).join('');
+      if (participants.includes(currentUserId)) select.value = currentUserId;
+      document.getElementById('productCatalogMount').innerHTML = renderProductDatalist();
+      document.getElementById('productNameInput').value = '';
+      document.getElementById('productQtyInput').value = '';
+      renderProductSuggestions(select.value || currentUserId);
+      document.getElementById('productModal').classList.add('open');
+    }
+
+    function closeProductModal() {
+      document.getElementById('productModal').classList.remove('open');
+    }
+
+    function openMoneyModal() {
+      const trip = state.trips.find(t => t.id === selectedTripId);
+      if (!trip) return;
+      const select = document.getElementById('moneyResponsibleSelect');
+      const participants = trip.participants || [];
+      select.innerHTML = participants.map(id => `<option value="${id}">${escapeHtml(userName(id))}</option>`).join('');
+      if (participants.includes(currentUserId)) select.value = currentUserId;
+      document.getElementById('moneyTitleInput').value = '';
+      document.getElementById('moneyAmountInput').value = '';
+      document.getElementById('moneyModal').classList.add('open');
+    }
+
+    function closeMoneyModal() {
+      document.getElementById('moneyModal').classList.remove('open');
+    }
+
+    function openTripLogModal() {
+      const trip = state.trips.find(t => t.id === selectedTripId);
+      if (!trip) return;
+      document.getElementById('tripLogSubtitle').textContent = trip.title || 'История изменений по поездке';
+      document.getElementById('tripLogModalContent').innerHTML = renderTripLog(trip);
+      document.getElementById('tripLogModal').classList.add('open');
+    }
+
+    function closeTripLogModal() {
+      document.getElementById('tripLogModal').classList.remove('open');
+    }
+
+    function renderTripInfo(trip, canEdit, participantsOptions, allUsersOptions) {
+      return `
+        <div class="trip-info-card">
+          <div class="grid-3">
+            <div><span class="badge blue">📍 Куда</span><p><b>${escapeHtml(trip.destination)}</b></p></div>
+            <div><span class="badge green">📅 Когда</span><p><b>${tripDateRange(trip)}</b></p></div>
+            <div><span class="badge orange">🚗 Место сбора</span><p><b>${escapeHtml(trip.meetingPoint || 'не указано')}</b></p></div>
+          </div>
+          ${trip.notes ? `<div class="notice" style="margin-top:14px;">${escapeHtml(trip.notes)}</div>` : ''}
+          <div class="participants-row" style="margin-top:14px;">
+            <span class="badge">👥 Участники</span>
+            ${(trip.participants || []).map(id => {
+              const u = userById(id);
+              return `<span class="profile-mini">${avatarHtml(u,'sm')}<span>${escapeHtml(userName(id))}</span></span>`;
+            }).join('') || '<span class="muted">участников пока нет</span>'}
+          </div>
+          ${canEdit ? `
+            <form class="row" data-add-participant style="margin-top:14px; position:relative; z-index:2;">
+              <select name="userId" style="min-height:42px;border-radius:14px;border:1px solid rgba(255,255,255,.32);padding:0 12px;background:white;">${allUsersOptions}</select>
+              <button class="btn btn-primary btn-small" type="submit">Добавить участника</button>
+            </form>` : ''}
+        </div>`;
+    }
+
+    function renderTripDetail() {
+      const modal = document.getElementById('tripDetailModal');
+      const wrap = document.getElementById('tripDetailWindow');
+      if (!wrap) return;
+      const trip = state.trips.find(t => t.id === selectedTripId);
+      if (!trip) {
+        wrap.innerHTML = '<div class="empty">Выберите поездку.</div>';
+        return;
+      }
+      const canEdit = isAdmin() || trip.organizerId === currentUserId;
+      const canDeleteTrip = isAdmin();
+      const participantsOptions = (trip.participants || []).map(id => `<option value="${id}">${escapeHtml(userName(id))}</option>`).join('');
+      const allUsersOptions = state.users.map(u => `<option value="${u.id}">${escapeHtml(u.profile.name || u.login)} — ${escapeHtml(u.login)}</option>`).join('');
+      const summary = moneySummary(trip);
+
+      const header = `
+        <div class="trip-window-head">
+          <div>
+            <h2>${escapeHtml(trip.title)}</h2>
+            <div class="muted">Карточка поездки</div>
+          </div>
+          <div class="row">
+            ${tripDetailMode !== 'overview' ? '<button class="btn btn-ghost btn-small" data-detail-mode="overview">← К поездке</button>' : ''}
+            <button class="btn btn-ghost btn-small" data-open-log-modal>Журнал действий</button>
+            ${canDeleteTrip ? `<button class="btn btn-red btn-small" data-delete-trip="${trip.id}">Удалить поездку</button>` : ''}
+            <button class="btn btn-ghost btn-small" data-close-trip-detail>✕</button>
+          </div>
+        </div>`;
+
+      if (tripDetailMode === 'money') {
+        wrap.innerHTML = header + renderTripInfo(trip, canEdit, participantsOptions, allUsersOptions) + `
+          <div class="screen-head">
+            <div><h3>💰 Список общих покупок</h3><div class="section-note">Здесь фиксируем реальные общие покупки: кто покупает и на какую сумму. Система сама делит общий котёл поровну и показывает, кому надо доплатить.</div></div>
+          </div>
+          <div class="summary-grid" style="margin-bottom:16px;">
+            <div class="summary-cell"><span>Кол-во покупок</span><b>${summary.count}</b></div>
+            <div class="summary-cell"><span>Общая цена</span><b>${money(summary.total)}</b></div>
+            <div class="summary-cell"><span>Участников</span><b>${summary.participantsCount}</b></div>
+          </div>
+          <div class="subpanel" style="margin-bottom:14px; background:rgba(255,255,255,.55);">
+            <div class="subpanel-head">
+              <div><h3>Расчёт общего котла</h3><div class="muted small">У каждого одинаковая доля, а доплата считается с учётом того, кто уже покупает общие позиции.</div></div>
+            </div>
+            ${renderMoneyBalances(trip)}
+            <div class="subpanel" style="background:rgba(255,255,255,.66);">
+              <div class="subpanel-head">
+                <div><h3>Кому перевести</h3><div class="muted small">Автоматический план выравнивания долей</div></div>
+              </div>
+              ${renderSettlementPlan(trip)}
+            </div>
+          </div>
+          <div class="money-toolbar">
+            <div class="mini-stat-row">
+              <div class="money-summary-pill"><span>Всего покупок</span><b>${summary.count}</b></div>
+              <div class="money-summary-pill"><span>Общий бюджет</span><b>${money(summary.total)}</b></div>
+            </div>
+            <button class="btn btn-primary" type="button" data-open-money-modal>+ Добавить покупку</button>
+          </div>
+          <div id="moneyList">${renderMoneyList(trip)}</div>
+        `;
+        if (modal && !modal.classList.contains('open')) modal.classList.add('open');
+        return;
+      }
+
+      if (tripDetailMode === 'food') {
+        wrap.innerHTML = header + renderTripInfo(trip, canEdit, participantsOptions, allUsersOptions) + `
+          <div class="screen-head">
+            <div><h3>🍞 Список продуктов</h3><div class="section-note">Здесь фиксируем, кто что покупает из еды, чтобы не было задвоений.</div></div>
+            <span class="badge orange">${(trip.foodItems || []).length} позиций</span>
+          </div>
+          <div class="products-toolbar">
+            <div style="flex:1 1 auto; min-width: 220px;">${renderProductIcons(trip) || '<div class="muted small">Значки продуктов появятся здесь после добавления позиций.</div>'}</div>
+            <button class="btn btn-orange" type="button" data-open-product-modal>+ Добавить продукт</button>
+          </div>
+          <div id="foodList">${renderFoodList(trip)}</div>
+        `;
+        if (modal && !modal.classList.contains('open')) modal.classList.add('open');
+        return;
+      }
+
+      wrap.innerHTML = header + renderTripInfo(trip, canEdit, participantsOptions, allUsersOptions) + `
+        <div class="section-cards">
+          <article class="action-card" data-detail-mode="money">
+            <div>
+              <h3>💰 Общие закупки</h3>
+              <div class="muted">Только денежные сборы: топливо, наживка, аренда, общие расходники.</div>
+              <div class="summary-grid">
+                <div class="summary-cell"><span>Кол-во товаров</span><b>${summary.count}</b></div>
+                <div class="summary-cell"><span>Общая цена</span><b>${money(summary.total)}</b></div>
+                <div class="summary-cell"><span>На каждого</span><b>${money(summary.perPerson)}</b></div>
+              </div>
+            </div>
+            <div class="open-hint">Открыть список общих закупок →</div>
+          </article>
+          <article class="action-card" data-detail-mode="food">
+            <div>
+              <h3>🍞 Продукты</h3>
+              <div class="muted">Кто что покупает из еды. Значки продуктов показываются уже внутри списка, а здесь — только вход в раздел.</div>
+              <div class="summary-grid">
+                <div class="summary-cell"><span>Позиций</span><b>${(trip.foodItems || []).length}</b></div>
+                <div class="summary-cell"><span>Категорий</span><b>${new Set((trip.foodItems || []).map(f => productCategory(f.name))).size || 0}</b></div>
+                <div class="summary-cell"><span>Участников</span><b>${(trip.participants || []).length}</b></div>
+              </div>
+            </div>
+            <div class="open-hint">Открыть список продуктов →</div>
+          </article>
+        </div>
+        <div class="notice blue">
+          Журнал действий скрыт с основной карточки поездки. Откройте его отдельной кнопкой сверху.
+        </div>
+      `;
+      if (modal && !modal.classList.contains('open')) modal.classList.add('open');
+    }
+
+    function renderMoneyList(trip) {
+      const pools = trip.moneyPools || [];
+      if (!pools.length) return '<div class="empty">Пока нет общих закупок. Добавьте покупку, которую кто-то берёт на себя, а потом система разделит сумму между участниками.</div>';
+      return `
+        <div class="table-wrap">
+          <table class="compact-money-table">
+            <thead>
+              <tr>
+                <th>Название покупки</th>
+                <th>Общая стоимость</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              ${pools.map(m => `
+                <tr>
+                  <td><b>${escapeHtml(m.title)}</b><div class="muted small" style="margin-top:4px;">Покупает: ${escapeHtml(userName(m.responsibleId))}</div></td>
+                  <td><b>${money(m.amount)}</b></td>
+                  <td><button class="btn btn-red btn-small" data-delete-money="${m.id}">Удалить</button></td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>`;
+    }
+
+    function renderFoodList(trip) {
+      const items = trip.foodItems || [];
+      const participants = [...new Set([...(trip.participants || []), ...items.map(f => f.assignedUserId).filter(Boolean)])];
+      if (!items.length) return '<div class="empty">Пока нет списка продуктов. Добавьте продукты и назначьте ответственных.</div>';
+
+      const rowsMap = new Map();
+      items.forEach(f => {
+        const meta = getProductMeta(f.name);
+        const category = f.category || meta.category;
+        if (!rowsMap.has(category)) {
+          rowsMap.set(category, { category, emoji: meta.emoji, cells: {}, allItems: [] });
+        }
+        const row = rowsMap.get(category);
+        const assigned = f.assignedUserId || 'none';
+        row.cells[assigned] = row.cells[assigned] || [];
+        row.cells[assigned].push(f);
+        row.allItems.push(f);
+      });
+
+      const rows = Array.from(rowsMap.values()).sort((a,b) => {
+        const ca = productCategoryOrder.indexOf(a.category) === -1 ? 999 : productCategoryOrder.indexOf(a.category);
+        const cb = productCategoryOrder.indexOf(b.category) === -1 ? 999 : productCategoryOrder.indexOf(b.category);
+        if (ca !== cb) return ca - cb;
+        return a.category.localeCompare(b.category, 'ru');
+      });
+
+      const renderCell = list => {
+        if (!list || !list.length) return '<span class="muted small">—</span>';
+        return `<div class="food-cell-list">${list.map(f => {
+          const meta = getProductMeta(f.name);
+          const bought = f.status === 'bought';
+          const canDeleteFood = isAdmin() || f.createdById === currentUserId;
+          return `
+            <div class="food-cell-item ${bought ? 'bought' : ''}">
+              <div>
+                <div class="food-card-title">${meta.emoji} ${escapeHtml(meta.canonical)}</div>
+                <div class="food-card-qty">${escapeHtml(f.qty || 'объём не указан')}</div>
+              </div>
+              <div class="food-card-actions">
+                <button class="icon-action ${bought ? 'bought' : 'planned'}" data-toggle-food="${f.id}" type="button" title="${bought ? 'Куплено' : 'Запланировано'}">${bought ? '✓' : '●'}</button>
+                ${canDeleteFood ? `<button class="icon-action delete" data-delete-food="${f.id}" type="button" title="Удалить">×</button>` : ''}
+              </div>
+            </div>`;
+        }).join('')}</div>`;
+      };
+
+      const participantHeaders = participants.map(id => `<th>${escapeHtml(userName(id))}</th>`).join('');
+      const tableRows = rows.map(row => `
+        <tr>
+          <td><span class="category-chip">${escapeHtml(row.category)}</span><div class="muted small" style="margin-top:6px;">${row.allItems.length} поз.</div></td>
+          ${participants.map(id => `<td>${renderCell(row.cells[id])}</td>`).join('')}
+        </tr>
+      `).join('');
+
+      return `
+        <div class="food-table-wrap">
+          <table class="food-matrix">
+            <thead>
+              <tr>
+                <th>Категория</th>
+                ${participantHeaders}
+              </tr>
+            </thead>
+            <tbody>${tableRows}</tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    function renderTripLog(trip) {
+      const logs = trip.log || [];
+      if (!logs.length) return '<div class="empty">История пока пустая.</div>';
+      return logs.slice(0, 12).map(l => `<div class="log-item"><b>${escapeHtml(l.at)}</b><br><span class="muted">${escapeHtml(l.text)}</span></div>`).join('');
+    }
+
+    function renderProfile() {
+      const u = currentUser();
+      if (!u) return;
+      document.getElementById('profileAvatarBig').innerHTML = avatarHtml(u, 'big').replace('avatar big', 'avatar big').replace('<div class="avatar big">', '').replace('</div>', '');
+      const avatarBox = document.getElementById('profileAvatarBig');
+      avatarBox.innerHTML = u.profile.avatar ? `<img src="${u.profile.avatar}" alt="">` : (u.profile.name || u.login).slice(0,2).toUpperCase();
+      document.getElementById('profileName').value = u.profile.name || '';
+      document.getElementById('profilePhone').value = u.profile.phone || '';
+    }
+
+    function renderAdmin() {
+      document.getElementById('usersList').innerHTML = state.users.map(u => `
+        <div class="user-item">
+          <div class="user-top">
+            <div class="row">
+              ${avatarHtml(u, 'sm')}
+              <div>
+                <b>${escapeHtml(u.profile.name || u.login)}</b>
+                <div class="muted small">логин: ${escapeHtml(u.login)} · пароль: скрыт · хэш SHA-256 · ${u.role === 'admin' ? 'администратор' : 'рыбак'}</div>
+                ${u.profile.phone ? `<div class="muted small">телефон: ${escapeHtml(u.profile.phone)}</div>` : ''}
+              </div>
+            </div>
+            ${u.id !== currentUserId ? `<button class="btn btn-red btn-small" data-delete-user="${u.id}">Удалить</button>` : '<span class="badge green">это вы</span>'}
+          </div>
+        </div>
+      `).join('');
+
+      const logs = state.authLog || [];
+      document.getElementById('authLogList').innerHTML = logs.length ? logs.slice(0, 30).map(l => `
+        <div class="log-item">
+          <b>${escapeHtml(l.at)}</b> <span class="badge ${l.status === 'success' ? 'green' : 'red'}">${l.status === 'success' ? 'успешно' : 'ошибка'}</span>
+          <div class="muted small">логин: ${escapeHtml(l.login)}${l.name ? ' · ' + escapeHtml(l.name) : ''}</div>
+        </div>
+      `).join('') : '<div class="empty">История входов пока пустая.</div>';
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      const login = document.getElementById('loginInput').value.trim();
+      const password = document.getElementById('passwordInput').value;
+      const u = state.users.find(x => normalize(x.login) === normalize(login));
+      const ok = await verifyPassword(u, password);
+      state.authLog = state.authLog || [];
+      state.authLog.unshift({ at: nowRu(), login, status: ok ? 'success' : 'fail', name: ok ? (u?.profile?.name || '') : '' });
+      saveState();
+      if (!ok) {
+        document.getElementById('loginError').textContent = 'Неверный логин или пароль. Обратитесь к администратору поездки.';
+        document.getElementById('loginError').classList.remove('hidden');
+        return;
+      }
+      currentUserId = u.id;
+      localStorage.setItem(SESSION_KEY, currentUserId);
+      document.getElementById('loginError').classList.add('hidden');
+      showApp();
+      toast('Вход выполнен');
+    });
+
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      localStorage.removeItem(SESSION_KEY);
+      currentUserId = '';
+      showAuth();
+    });
+
+    document.getElementById('tabs').addEventListener('click', e => {
+      const btn = e.target.closest('[data-tab]');
+      if (!btn) return;
+      activeView = btn.dataset.tab;
+      renderAll();
+    });
+
+    document.getElementById('tripSearch').addEventListener('input', renderTrips);
+    document.getElementById('openTripModalBtn').addEventListener('click', () => document.getElementById('tripModal').classList.add('open'));
+    document.querySelectorAll('[data-close-modal]').forEach(btn => btn.addEventListener('click', () => document.getElementById('tripModal').classList.remove('open')));
+    document.getElementById('tripModal').addEventListener('click', e => { if (e.target.id === 'tripModal') e.currentTarget.classList.remove('open'); });
+
+    document.getElementById('tripForm').addEventListener('submit', e => {
+      e.preventDefault();
+      const trip = {
+        id: uid(),
+        title: document.getElementById('tripTitle').value.trim(),
+        destination: document.getElementById('tripDestination').value.trim(),
+        startDate: document.getElementById('tripStart').value,
+        endDate: document.getElementById('tripEnd').value,
+        meetingPoint: document.getElementById('tripMeeting').value.trim(),
+        notes: document.getElementById('tripNotes').value.trim(),
+        organizerId: currentUserId,
+        participants: [currentUserId],
+        moneyPools: [],
+        foodItems: [],
+        log: [{ at: nowRu(), text: 'Создана карточка поездки' }]
+      };
+      state.trips.unshift(trip);
+      selectedTripId = trip.id;
+      tripDetailMode = 'overview';
+      saveState();
+      e.target.reset();
+      document.getElementById('tripModal').classList.remove('open');
+      renderAll();
+      renderTripDetail();
+      toast('Поездка создана');
+    });
+
+    document.getElementById('tripCardsGrid').addEventListener('click', e => {
+      const card = e.target.closest('[data-open-trip]');
+      if (!card) return;
+      selectedTripId = card.dataset.openTrip;
+      tripDetailMode = 'overview';
+      renderTripDetail();
+    });
+
+    document.getElementById('tripDetailModal').addEventListener('click', e => {
+      if (e.target.id === 'tripDetailModal') e.currentTarget.classList.remove('open');
+    });
+
+    document.getElementById('tripDetailWindow').addEventListener('submit', e => {
+      const trip = state.trips.find(t => t.id === selectedTripId);
+      if (!trip) return;
+
+      const addParticipant = e.target.closest('[data-add-participant]');
+
+      if (addParticipant) {
+        e.preventDefault();
+        const userId = new FormData(addParticipant).get('userId');
+        trip.participants = trip.participants || [];
+        if (!trip.participants.includes(userId)) {
+          trip.participants.push(userId);
+          addTripLog(trip, `Добавлен участник: ${userName(userId)}`);
+          saveState();
+          renderAll();
+          toast('Участник добавлен');
+        } else toast('Этот участник уже есть в поездке');
+      }
+    });
+
+    document.getElementById('tripDetailWindow').addEventListener('click', e => {
+      const closeBtn = e.target.closest('[data-close-trip-detail]');
+      if (closeBtn) {
+        document.getElementById('tripDetailModal').classList.remove('open');
+        return;
+      }
+      const modeBtn = e.target.closest('[data-detail-mode]');
+      if (modeBtn) {
+        tripDetailMode = modeBtn.dataset.detailMode;
+        renderTripDetail();
+        return;
+      }
+      if (e.target.closest('[data-open-product-modal]')) {
+        openProductModal();
+        return;
+      }
+      if (e.target.closest('[data-open-money-modal]')) {
+        openMoneyModal();
+        return;
+      }
+      if (e.target.closest('[data-open-log-modal]')) {
+        openTripLogModal();
+        return;
+      }
+
+      const trip = state.trips.find(t => t.id === selectedTripId);
+      if (!trip) return;
+      const delTrip = e.target.closest('[data-delete-trip]');
+      const delMoney = e.target.closest('[data-delete-money]');
+      const delFood = e.target.closest('[data-delete-food]');
+      const toggleFood = e.target.closest('[data-toggle-food]');
+
+      if (delTrip) {
+        if (!isAdmin()) return toast('Удалять поездки может только администратор');
+        if (!confirm('Удалить поездку целиком?')) return;
+        state.trips = state.trips.filter(t => t.id !== delTrip.dataset.deleteTrip);
+        selectedTripId = state.trips[0]?.id || null;
+        document.getElementById('tripDetailModal').classList.remove('open');
+        saveState();
+        renderAll();
+        toast('Поездка удалена');
+      }
+      if (delMoney) {
+        const item = (trip.moneyPools || []).find(m => m.id === delMoney.dataset.deleteMoney);
+        trip.moneyPools = (trip.moneyPools || []).filter(m => m.id !== delMoney.dataset.deleteMoney);
+        addTripLog(trip, `Удалена общая покупка: ${item?.title || ''}`);
+        saveState();
+        renderAll();
+        toast('Покупка удалена');
+      }
+      if (delFood) {
+        const item = (trip.foodItems || []).find(f => f.id === delFood.dataset.deleteFood);
+        if (!item) return;
+        if (!isAdmin() && item.createdById !== currentUserId) {
+          return toast('Удалить продукт может только тот, кто его добавил, или администратор');
+        }
+        trip.foodItems = (trip.foodItems || []).filter(f => f.id !== delFood.dataset.deleteFood);
+        addTripLog(trip, `Удалена позиция еды: ${item?.name || ''}`);
+        saveState();
+        renderAll();
+        toast('Позиция удалена');
+      }
+      if (toggleFood) {
+        const item = (trip.foodItems || []).find(f => f.id === toggleFood.dataset.toggleFood);
+        if (item) {
+          item.status = item.status === 'bought' ? 'planned' : 'bought';
+          addTripLog(trip, `${item.name}: статус изменён на ${item.status === 'bought' ? 'куплено' : 'запланировано'}`);
+          saveState();
+          renderAll();
+          toast('Статус обновлён');
+        }
+      }
+    });
+
+    document.getElementById('moneyModal').addEventListener('click', e => {
+      if (e.target.id === 'moneyModal' || e.target.closest('[data-close-money-modal]')) closeMoneyModal();
+    });
+
+    document.getElementById('moneyModalForm').addEventListener('submit', e => {
+      e.preventDefault();
+      const trip = state.trips.find(t => t.id === selectedTripId);
+      if (!trip) return;
+      const fd = new FormData(e.target);
+      const item = { id: uid(), title: fd.get('title').trim(), amount: Number(fd.get('amount') || 0), responsibleId: fd.get('responsibleId') };
+      trip.moneyPools = trip.moneyPools || [];
+      trip.moneyPools.push(item);
+      addTripLog(trip, `Добавлена общая покупка: ${item.title} на ${money(item.amount)}. Покупает ${userName(item.responsibleId)}`);
+      saveState();
+      closeMoneyModal();
+      renderAll();
+      renderTripDetail();
+      toast('Общая покупка добавлена');
+    });
+
+    document.getElementById('productModal').addEventListener('click', e => {
+      if (e.target.id === 'productModal' || e.target.closest('[data-close-product-modal]')) closeProductModal();
+      const suggest = e.target.closest('[data-suggest-product]');
+      if (suggest) {
+        document.getElementById('productNameInput').value = suggest.dataset.suggestProduct || '';
+        document.getElementById('productQtyInput').value = suggest.dataset.suggestQty || '';
+      }
+    });
+
+    document.getElementById('productAssignedSelect').addEventListener('change', e => {
+      renderProductSuggestions(e.target.value);
+    });
+
+    document.getElementById('productModalForm').addEventListener('submit', e => {
+      e.preventDefault();
+      const trip = state.trips.find(t => t.id === selectedTripId);
+      if (!trip) return;
+      const fd = new FormData(e.target);
+      const name = fd.get('name').trim();
+      const meta = getProductMeta(name);
+      const duplicate = (trip.foodItems || []).some(x => productKey(x.name) === productKey(name));
+      const item = { id: uid(), name, canonicalName: meta.canonical, category: meta.category, qty: fd.get('qty').trim(), assignedUserId: fd.get('assignedUserId'), createdById: currentUserId, status: 'planned' };
+      trip.foodItems = trip.foodItems || [];
+      trip.foodItems.push(item);
+      rememberProductPurchase(item);
+      addTripLog(trip, `В список продуктов добавлено: ${meta.emoji} ${name} · категория «${meta.category}». Покупает ${userName(item.assignedUserId)}`);
+      saveState();
+      closeProductModal();
+      renderAll();
+      renderTripDetail();
+      toast(duplicate ? 'Позиция добавлена в существующую категорию' : `Позиция добавлена: ${meta.category}`);
+    });
+
+    document.getElementById('tripLogModal').addEventListener('click', e => {
+      if (e.target.id === 'tripLogModal' || e.target.closest('[data-close-log-modal]')) closeTripLogModal();
+    });
+
+    document.getElementById('profileForm').addEventListener('submit', e => {
+      e.preventDefault();
+      const u = currentUser();
+      u.profile.name = document.getElementById('profileName').value.trim();
+      u.profile.phone = document.getElementById('profilePhone').value.trim();
+      saveState();
+      renderAll();
+      toast('Профиль сохранён');
+    });
+
+    document.getElementById('avatarInput').addEventListener('change', e => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        const u = currentUser();
+        u.profile.avatar = reader.result;
+        saveState();
+        renderAll();
+        toast('Фото профиля обновлено');
+      };
+      reader.readAsDataURL(file);
+    });
+
+    document.getElementById('userForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      if (!isAdmin()) return;
+      const login = document.getElementById('newLogin').value.trim();
+      if (state.users.some(u => normalize(u.login) === normalize(login))) return toast('Такой логин уже есть');
+      const passwordSalt = uid();
+      const user = {
+        id: uid(),
+        login,
+        passwordSalt,
+        passwordHash: await hashPassword(document.getElementById('newPassword').value, passwordSalt),
+        role: document.getElementById('newRole').value,
+        profile: { name: document.getElementById('newName').value.trim() || login, phone: document.getElementById('newPhone').value.trim(), avatar: '' }
+      };
+      state.users.push(user);
+      saveState();
+      e.target.reset();
+      renderAll();
+      toast('Пользователь создан, пароль сохранён как хэш');
+    });
+
+    document.getElementById('adminView').addEventListener('click', e => {
+      if (!isAdmin()) return;
+      const delUser = e.target.closest('[data-delete-user]');
+      if (delUser) {
+        if (!confirm('Удалить пользователя? Он также будет удалён из участников поездок.')) return;
+        const id = delUser.dataset.deleteUser;
+        state.users = state.users.filter(u => u.id !== id);
+        state.trips.forEach(t => {
+          t.participants = (t.participants || []).filter(x => x !== id);
+          t.foodItems = (t.foodItems || []).filter(f => f.assignedUserId !== id);
+        });
+        saveState();
+        renderAll();
+        toast('Пользователь удалён');
+      }
+      if (e.target.closest('#clearLogBtn')) {
+        state.authLog = [];
+        saveState();
+        renderAll();
+        toast('История входов очищена');
+      }
+    });
+
+    if (currentUser()) showApp(); else showAuth();
+  </script>
+</body>
+</html>
